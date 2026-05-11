@@ -6,6 +6,8 @@ using Nomisma.Application.Abstractions.Auth;
 using Nomisma.Infrastructure.Auth;
 using Nomisma.Infrastructure.Identity;
 using Nomisma.Application.Abstractions.Persistence;
+using Nomisma.Application.Abstractions.Integrations;
+using Nomisma.Infrastructure.Integrations;
 using Nomisma.Infrastructure.Persistence;
 
 namespace Nomisma.Infrastructure;
@@ -45,6 +47,8 @@ public static class DependencyInjection
 
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IUserAccountService, UserAccountService>();
+        services.AddScoped<ICreditScoreService, MockCreditScoreService>();
+        services.AddScoped<IPaymentGateway, MockPaymentGateway>();
         services.AddScoped<NomismaDbSeeder>();
 
         return services;

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Nomisma.Application.Abstractions.Auth;
+using Nomisma.Application.Abstractions.Integrations;
 using Nomisma.Application.Abstractions.Persistence;
 using Nomisma.Application.Common.Exceptions;
 using Nomisma.Application.Installments;
@@ -13,12 +14,17 @@ public sealed class LoanService
 {
     private readonly INomismaDbContext _dbContext;
     private readonly ICurrentUserService _currentUser;
+    private readonly ICreditScoreService _creditScoreService;
     private readonly LoanCalculator _loanCalculator = new();
 
-    public LoanService(INomismaDbContext dbContext, ICurrentUserService currentUser)
+    public LoanService(
+        INomismaDbContext dbContext,
+        ICurrentUserService currentUser,
+        ICreditScoreService creditScoreService)
     {
         _dbContext = dbContext;
         _currentUser = currentUser;
+        _creditScoreService = creditScoreService;
     }
 
     public async Task<IReadOnlyList<LoanDto>> ListAsync(Guid? customerId, CancellationToken cancellationToken)
@@ -68,10 +74,13 @@ public sealed class LoanService
 
         ValidateCreate(request);
 
-        var customerExists = await _dbContext.Customers.AnyAsync(customer => customer.Id == request.CustomerId, cancellationToken);
-        if (!customerExists)
+        var customer = await _dbContext.Customers.FirstOrDefaultAsync(item => item.Id == request.CustomerId, cancellationToken)
+            ?? throw new NotFoundException("Musteri bulunamadi.");
+
+        var creditScore = await _creditScoreService.GetScoreAsync(customer, cancellationToken);
+        if (creditScore < 650)
         {
-            throw new NotFoundException("Musteri bulunamadi.");
+            throw new ValidationException($"Kredi skoru yetersiz. Skor: {creditScore}, minimum: 650.");
         }
 
         var calculation = _loanCalculator.Calculate(request.PrincipalAmount, request.ProfitRate, request.TermMonths, request.StartDate);
@@ -83,7 +92,7 @@ public sealed class LoanService
             ProfitRate = request.ProfitRate,
             TermMonths = request.TermMonths,
             StartDate = request.StartDate,
-            CreditScore = 0,
+            CreditScore = creditScore,
             TotalProfit = calculation.TotalProfit,
             TotalDebt = calculation.TotalDebt,
             Status = LoanStatus.Active
@@ -232,4 +241,3 @@ public sealed class LoanService
         }
     }
 }
-
