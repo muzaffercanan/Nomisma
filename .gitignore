@@ -1,0 +1,15 @@
+bin/
+obj/
+.vs/
+.vscode/
+*.user
+*.suo
+
+client/node_modules/
+client/dist/
+client/.vite/
+
+*.db
+*.db-shm
+*.db-wal
+
