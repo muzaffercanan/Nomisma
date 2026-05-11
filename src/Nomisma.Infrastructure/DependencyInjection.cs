@@ -21,6 +21,7 @@ public static class DependencyInjection
 
         services.AddDbContext<NomismaDbContext>(options => options.UseSqlServer(connectionString));
         services.AddScoped<INomismaDbContext>(provider => provider.GetRequiredService<NomismaDbContext>());
+        services.AddScoped<ITransactionManager, EfTransactionManager>();
         var jwtSection = configuration.GetSection(JwtOptions.SectionName);
         services.Configure<JwtOptions>(options =>
         {

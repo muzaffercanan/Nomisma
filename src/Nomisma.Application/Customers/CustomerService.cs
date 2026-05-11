@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Nomisma.Application.Abstractions.Auth;
 using Nomisma.Application.Abstractions.Persistence;
 using Nomisma.Application.Common.Exceptions;
+using Nomisma.Application.Installments;
 using Nomisma.Domain.Entities;
 using Nomisma.Domain.Enums;
 
@@ -11,11 +12,16 @@ public sealed class CustomerService
 {
     private readonly INomismaDbContext _dbContext;
     private readonly IUserAccountService _userAccountService;
+    private readonly ICurrentUserService _currentUser;
 
-    public CustomerService(INomismaDbContext dbContext, IUserAccountService userAccountService)
+    public CustomerService(
+        INomismaDbContext dbContext,
+        IUserAccountService userAccountService,
+        ICurrentUserService currentUser)
     {
         _dbContext = dbContext;
         _userAccountService = userAccountService;
+        _currentUser = currentUser;
     }
 
     public async Task<IReadOnlyList<CustomerDto>> ListAsync(CancellationToken cancellationToken)
@@ -102,6 +108,94 @@ public sealed class CustomerService
         customer.UpdatedAtUtc = DateTimeOffset.UtcNow;
         await _dbContext.SaveChangesAsync(cancellationToken);
         await _userAccountService.DisableCustomerUserAsync(customer.Id, cancellationToken);
+    }
+
+    public async Task<CustomerSummaryDto> GetSummaryAsync(Guid id, CancellationToken cancellationToken)
+    {
+        EnsureCanAccess(id);
+        await MarkOverdueInstallmentsAsync(id, cancellationToken);
+
+        var customer = await _dbContext.Customers
+            .AsNoTracking()
+            .Include(item => item.Loans)
+            .ThenInclude(item => item.Installments)
+            .ThenInclude(item => item.Payment)
+            .FirstOrDefaultAsync(item => item.Id == id, cancellationToken)
+            ?? throw new NotFoundException("Musteri bulunamadi.");
+
+        var installments = customer.Loans
+            .SelectMany(loan => loan.Installments)
+            .OrderBy(item => item.DueDate)
+            .ThenBy(item => item.InstallmentNumber)
+            .ToList();
+
+        var paid = installments
+            .Where(item => item.Status == InstallmentStatus.Paid)
+            .Select(InstallmentService.Map)
+            .ToList();
+
+        var unpaid = installments
+            .Where(item => item.Status != InstallmentStatus.Paid)
+            .Select(InstallmentService.Map)
+            .ToList();
+
+        return new CustomerSummaryDto(
+            customer.Id,
+            customer.CustomerNumber,
+            customer.FullName,
+            customer.Loans.Sum(loan => loan.TotalDebt),
+            installments.Where(item => item.Status != InstallmentStatus.Paid).Sum(item => item.PrincipalAmount),
+            installments.Where(item => item.Status != InstallmentStatus.Paid).Sum(item => item.Amount),
+            installments.Count(item => item.Status == InstallmentStatus.Overdue),
+            paid,
+            unpaid);
+    }
+
+    public async Task<CustomerSummaryDto> GetMySummaryAsync(CancellationToken cancellationToken)
+    {
+        var customerId = _currentUser.CustomerId
+            ?? throw new ForbiddenException("Musteri baglantisi bulunamadi.");
+
+        return await GetSummaryAsync(customerId, cancellationToken);
+    }
+
+    private async Task MarkOverdueInstallmentsAsync(Guid customerId, CancellationToken cancellationToken)
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var overdueInstallments = await _dbContext.Installments
+            .Where(item =>
+                item.Loan != null
+                && item.Loan.CustomerId == customerId
+                && item.Status == InstallmentStatus.Unpaid
+                && item.DueDate < today)
+            .ToListAsync(cancellationToken);
+
+        if (overdueInstallments.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var installment in overdueInstallments)
+        {
+            installment.Status = InstallmentStatus.Overdue;
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private void EnsureCanAccess(Guid customerId)
+    {
+        if (_currentUser.IsAdmin)
+        {
+            return;
+        }
+
+        if (_currentUser.IsCustomer && _currentUser.CustomerId == customerId)
+        {
+            return;
+        }
+
+        throw new ForbiddenException("Bu musteri kaydina erisim yetkiniz yok.");
     }
 
     private async Task<string> GenerateCustomerNumberAsync(CancellationToken cancellationToken)
