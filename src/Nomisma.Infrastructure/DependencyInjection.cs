@@ -44,6 +44,7 @@ public static class DependencyInjection
             .AddEntityFrameworkStores<NomismaDbContext>();
 
         services.AddScoped<IJwtTokenService, JwtTokenService>();
+        services.AddScoped<IUserAccountService, UserAccountService>();
         services.AddScoped<NomismaDbSeeder>();
 
         return services;
