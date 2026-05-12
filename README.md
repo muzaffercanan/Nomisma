@@ -82,19 +82,107 @@ Odeme gateway:
 - `4000000000000002` ve `0000000000000000` reddedilir.
 - Gateway basarisizsa `Payment` kaydi olusmaz ve taksit durumu degismez.
 
-## API Ozeti
+## ER Diyagramı
 
-- `POST /api/auth/login`
-- `GET/POST/PUT/DELETE /api/customers`
-- `GET /api/customers/{id}`
-- `GET /api/customers/{id}/summary`
-- `GET /api/customers/me/summary`
-- `GET/POST/PUT /api/loans`
-- `GET /api/loans/{id}`
-- `GET /api/loans/{id}/installments`
-- `GET/PUT /api/installments/{id}`
-- `GET/POST /api/payments`
-- `GET /api/payments/{id}`
+```mermaid
+erDiagram
+    Customer {
+        guid Id PK
+        string CustomerNumber
+        string FirstName
+        string LastName
+        string NationalId
+        string Email
+        string PhoneNumber
+        string Address
+        date DateOfBirth
+        bool IsDeleted
+    }
+    Loan {
+        guid Id PK
+        guid CustomerId FK
+        string Type
+        decimal PrincipalAmount
+        decimal ProfitRate
+        int TermMonths
+        date StartDate
+        string Status
+        int CreditScore
+        decimal TotalProfit
+        decimal TotalDebt
+    }
+    Installment {
+        guid Id PK
+        guid LoanId FK
+        int InstallmentNumber
+        decimal PrincipalAmount
+        decimal ProfitAmount
+        decimal Amount
+        date DueDate
+        string Status
+        datetime PaidAtUtc
+    }
+    Payment {
+        guid Id PK
+        guid InstallmentId FK
+        decimal Amount
+        datetime PaidAtUtc
+        string Status
+        string GatewayStatus
+        string GatewayTransactionId
+        string FailureReason
+    }
+
+    Customer ||--o{ Loan : "sahiptir"
+    Loan ||--|{ Installment : "icerir"
+    Installment ||--o| Payment : "kapatilir"
+```
+
+## API Endpoint Listesi
+
+| Metot | Endpoint | Rol | Açıklama |
+|-------|----------|-----|----------|
+| POST | `/api/auth/login` | — | Kullanıcı girişi, JWT döner |
+| GET | `/api/customers` | Admin | Tüm müşterileri listeler |
+| GET | `/api/customers/{id}` | Admin | Müşteri detayı |
+| GET | `/api/customers/{id}/summary` | Admin | Müşteri özeti (krediler + taksitler) |
+| GET | `/api/customers/me/summary` | Customer | Giriş yapan müşterinin özeti |
+| POST | `/api/customers` | Admin | Yeni müşteri oluşturur |
+| PUT | `/api/customers/{id}` | Admin | Müşteri bilgilerini günceller |
+| DELETE | `/api/customers/{id}` | Admin | Müşteriyi soft-delete ile siler |
+| GET | `/api/loans` | Admin / Customer | Kredileri listeler (`?customerId=` ile filtreler) |
+| GET | `/api/loans/{id}` | Admin / Customer | Kredi detayı |
+| POST | `/api/loans` | Admin | Yeni kredi oluşturur, taksit planını üretir |
+| PUT | `/api/loans/{id}` | Admin | Kredi durumunu günceller (Active / Closed) |
+| GET | `/api/loans/{id}/installments` | Admin / Customer | Krediye ait taksit listesi |
+| GET | `/api/installments/{id}` | Admin / Customer | Taksit detayı |
+| PUT | `/api/installments/{id}` | Admin | Taksit bilgilerini günceller |
+| GET | `/api/payments` | Admin / Customer | Ödeme listesi |
+| GET | `/api/payments/{id}` | Admin / Customer | Ödeme detayı |
+| POST | `/api/payments` | Admin / Customer | Taksit ödemesi yapar |
+
+> Customer rolündeki kullanıcılar yalnızca kendi kayıtlarına erişebilir.
+
+## Kredi Oluşturma ve Taksit Üretme Akışı
+
+```mermaid
+flowchart TD
+    A([Admin: POST /api/loans]) --> B[FluentValidation\nİstek doğrulama]
+    B -->|Geçersiz| E1([400 Validation Error])
+    B -->|Geçerli| C[Müşteri veritabanından çekiliyor]
+    C -->|Bulunamadı| E2([404 Not Found])
+    C -->|Bulundu| D[MockCreditScoreService\nKredi skoru hesaplanıyor]
+    D --> F{Skor >= 650?}
+    F -->|Hayır| E3([400 Yetersiz kredi skoru])
+    F -->|Evet| G[LoanCalculator\nAnapar + Kar hesaplanıyor]
+    G --> H[Loan entity oluşturuluyor]
+    H --> I[Her ay için Installment üretiliyor\nTermMonths adet taksit]
+    I --> J[Son taksit kurus farkını absorbe ediyor]
+    J --> K[DB'ye kaydediliyor\nLoan + Installments]
+    K --> L([201 Created: LoanResponseDto])
+```
+
+Taksit tutarı: `monthlyAmount = TotalDebt / TermMonths` (yuvarlama farkı son taksite eklenir).
 
 ## Dogrulama
 

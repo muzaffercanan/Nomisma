@@ -58,6 +58,36 @@ public sealed class PaymentServiceTests
     }
 
     [Fact]
+    public async Task CreateAsync_WhenPreviousInstallmentUnpaid_RejectsPayment()
+    {
+        await using var dbContext = CreateDbContext();
+        await SeedLoanAsync(dbContext, installmentCount: 2);
+        var secondInstallment = await dbContext.Installments
+            .OrderBy(item => item.InstallmentNumber)
+            .Skip(1)
+            .FirstAsync();
+        var service = CreateService(dbContext, PaymentGatewayResultFactory.Approved("TX-1"));
+
+        await Assert.ThrowsAsync<ConflictException>(() =>
+            service.CreateAsync(CreateRequest(secondInstallment.Id, secondInstallment.Amount), CancellationToken.None));
+
+        Assert.Empty(await dbContext.Payments.ToListAsync());
+    }
+
+    [Fact]
+    public async Task CreateAsync_WhenEarlierCustomerInstallmentUnpaid_RejectsPayment()
+    {
+        await using var dbContext = CreateDbContext();
+        var laterInstallment = await SeedTwoLoansForSameCustomerAsync(dbContext);
+        var service = CreateService(dbContext, PaymentGatewayResultFactory.Approved("TX-1"));
+
+        await Assert.ThrowsAsync<ConflictException>(() =>
+            service.CreateAsync(CreateRequest(laterInstallment.Id, laterInstallment.Amount), CancellationToken.None));
+
+        Assert.Empty(await dbContext.Payments.ToListAsync());
+    }
+
+    [Fact]
     public async Task CreateAsync_LastInstallmentPayment_ClosesLoan()
     {
         await using var dbContext = CreateDbContext();
@@ -135,6 +165,65 @@ public sealed class PaymentServiceTests
         dbContext.Loans.Add(loan);
         await dbContext.SaveChangesAsync();
         return await dbContext.Installments.OrderBy(item => item.InstallmentNumber).FirstAsync();
+    }
+
+    private static async Task<Installment> SeedTwoLoansForSameCustomerAsync(NomismaDbContext dbContext)
+    {
+        var customer = new Customer
+        {
+            CustomerNumber = "CUST-TEST",
+            FirstName = "Test",
+            LastName = "Customer",
+            NationalId = "10000000001",
+            Email = "customer@nomisma.local",
+            PhoneNumber = "+90 555 000 0000",
+            Address = "Istanbul",
+            DateOfBirth = new DateOnly(1990, 1, 1)
+        };
+
+        var earlierLoan = CreateLoan(customer.Id, new DateOnly(2026, 1, 1));
+        earlierLoan.Installments.Add(CreateInstallment(1, new DateOnly(2026, 2, 1)));
+
+        var laterLoan = CreateLoan(customer.Id, new DateOnly(2026, 4, 1));
+        laterLoan.Installments.Add(CreateInstallment(1, new DateOnly(2026, 5, 1)));
+
+        dbContext.Customers.Add(customer);
+        dbContext.Loans.AddRange(earlierLoan, laterLoan);
+        await dbContext.SaveChangesAsync();
+
+        return await dbContext.Installments
+            .OrderByDescending(item => item.DueDate)
+            .FirstAsync();
+    }
+
+    private static Loan CreateLoan(Guid customerId, DateOnly startDate)
+    {
+        return new Loan
+        {
+            CustomerId = customerId,
+            Type = LoanType.Personal,
+            PrincipalAmount = 100m,
+            ProfitRate = 0m,
+            TermMonths = 1,
+            StartDate = startDate,
+            CreditScore = 750,
+            TotalDebt = 100m,
+            TotalProfit = 0m,
+            Status = LoanStatus.Active
+        };
+    }
+
+    private static Installment CreateInstallment(int installmentNumber, DateOnly dueDate)
+    {
+        return new Installment
+        {
+            InstallmentNumber = installmentNumber,
+            PrincipalAmount = 100m,
+            ProfitAmount = 0m,
+            Amount = 100m,
+            DueDate = dueDate,
+            Status = InstallmentStatus.Unpaid
+        };
     }
 
     private static CreatePaymentRequestDto CreateRequest(Guid installmentId, decimal amount)

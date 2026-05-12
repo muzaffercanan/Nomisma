@@ -83,6 +83,7 @@ public sealed class PaymentService : IPaymentService
 
         EnsureCanAccess(installment.Loan?.CustomerId);
         EnsureInstallmentPayable(installment, request.Amount);
+        await EnsureEarlierInstallmentsPaidAsync(installment, cancellationToken);
 
         var gatewayResult = await _paymentGateway.AuthorizeAsync(new PaymentGatewayRequestDto(
             request.InstallmentId,
@@ -108,6 +109,7 @@ public sealed class PaymentService : IPaymentService
                 ?? throw new NotFoundException("Taksit bulunamadi.");
 
             EnsureInstallmentPayable(trackedInstallment, request.Amount);
+            await EnsureEarlierInstallmentsPaidAsync(trackedInstallment, cancellationToken);
 
             var paidAt = DateTimeOffset.UtcNow;
             var payment = new Payment
@@ -170,6 +172,27 @@ public sealed class PaymentService : IPaymentService
         if (requestedAmount != installment.Amount)
         {
             throw new AppValidationException("Odeme tutari tam taksit tutariyla eslesmelidir.");
+        }
+    }
+
+    private async Task EnsureEarlierInstallmentsPaidAsync(Installment installment, CancellationToken cancellationToken)
+    {
+        var customerId = installment.Loan?.CustomerId
+            ?? throw new NotFoundException("Kredi bulunamadi.");
+
+        var hasUnpaidEarlierInstallment = await _dbContext.Installments
+            .AnyAsync(item =>
+                item.Id != installment.Id
+                && item.Loan != null
+                && item.Loan.CustomerId == customerId
+                && (item.DueDate < installment.DueDate
+                    || (item.LoanId == installment.LoanId && item.InstallmentNumber < installment.InstallmentNumber))
+                && item.Status != InstallmentStatus.Paid,
+                cancellationToken);
+
+        if (hasUnpaidEarlierInstallment)
+        {
+            throw new ConflictException("Daha erken vadeli taksitler odenmeden sonraki taksit odenemez.");
         }
     }
 
