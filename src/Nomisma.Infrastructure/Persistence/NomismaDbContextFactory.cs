@@ -8,10 +8,9 @@ public sealed class NomismaDbContextFactory : IDesignTimeDbContextFactory<Nomism
     public NomismaDbContext CreateDbContext(string[] args)
     {
         var options = new DbContextOptionsBuilder<NomismaDbContext>()
-            .UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=NomismaDb;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True")
+            .UseSqlServer("Server=localhost;Database=NomismaDb;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True")
             .Options;
 
         return new NomismaDbContext(options);
     }
 }
-

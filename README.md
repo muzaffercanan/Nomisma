@@ -40,7 +40,7 @@ VITE_API_URL=https://localhost:7176 npm run dev
 Varsayilan connection string:
 
 ```json
-"Server=(localdb)\\mssqllocaldb;Database=NomismaDb;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True"
+"Server=localhost;Database=NomismaDb;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True"
 ```
 
 Local SQL Server instance farkliysa `src/Nomisma.Api/appsettings.Development.json` veya environment variable ile `ConnectionStrings__NomismaDb` degistirilebilir.
@@ -103,4 +103,3 @@ dotnet test
 cd client
 npm run build
 ```
-
