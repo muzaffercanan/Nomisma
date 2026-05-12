@@ -29,10 +29,10 @@ npm install
 npm run dev
 ```
 
-Varsayilan API adresi `https://localhost:7176`. Farkli bir port kullaniliyorsa client icin `VITE_API_URL` verilebilir.
+Varsayilan API adresi `http://localhost:5030`. Farkli bir port kullaniliyorsa client icin `VITE_API_URL` verilebilir.
 
 ```bash
-VITE_API_URL=https://localhost:7176 npm run dev
+VITE_API_URL=http://localhost:5030 npm run dev
 ```
 
 ## Local SQL Server

@@ -1,4 +1,4 @@
-export const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'https://localhost:7176'
+export const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:5030'
 
 export type Role = 'Admin' | 'Customer'
 
@@ -215,4 +215,3 @@ export function installmentStatusLabel(status: InstallmentStatus) {
   }
   return labels[status]
 }
-
