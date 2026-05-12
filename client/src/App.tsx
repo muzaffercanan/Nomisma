@@ -20,7 +20,7 @@ import {
   installmentStatusLabel,
   loanTypeLabel,
 } from './api'
-import type { Customer, CustomerSummary, Loan, Payment, Session } from './api'
+import type { Customer, CustomerSummary, Installment, Loan, Payment, Session } from './api'
 import './App.css'
 
 const sessionKey = 'nomisma.session'
@@ -105,7 +105,7 @@ function App() {
         element={
           <RequireRole session={session} role="Customer">
             <AppShell session={session!} onLogout={logout}>
-              <CustomerDashboardShell />
+              <CustomerDashboard session={session!} />
             </AppShell>
           </RequireRole>
         }
@@ -542,15 +542,182 @@ function AdminDashboard({ session }: { session: Session }) {
   )
 }
 
-function CustomerDashboardShell() {
+type PaymentFormState = {
+  cardHolderName: string
+  cardNumber: string
+  cvv: string
+  expiryMonth: string
+  expiryYear: string
+}
+
+const defaultPaymentForm: PaymentFormState = {
+  cardHolderName: 'Demo Customer',
+  cardNumber: '4111111111111111',
+  cvv: '123',
+  expiryMonth: '12',
+  expiryYear: '2030',
+}
+
+function CustomerDashboard({ session }: { session: Session }) {
+  const [summary, setSummary] = useState<CustomerSummary | null>(null)
+  const [loans, setLoans] = useState<Loan[]>([])
+  const [selectedLoanId, setSelectedLoanId] = useState('')
+  const [paymentTarget, setPaymentTarget] = useState<Installment | null>(null)
+  const [paymentForm, setPaymentForm] = useState<PaymentFormState>(defaultPaymentForm)
+  const [notice, setNotice] = useState('')
+  const [error, setError] = useState('')
+
+  const selectedLoan = useMemo(() => loans.find((loan) => loan.id === selectedLoanId) ?? loans[0] ?? null, [loans, selectedLoanId])
+
+  const loadCustomerData = useCallback(async () => {
+    const [nextSummary, nextLoans] = await Promise.all([
+      api.mySummary(session.token),
+      api.loans(session.token),
+    ])
+    setSummary(nextSummary)
+    setLoans(nextLoans)
+    if (!selectedLoanId && nextLoans[0]) setSelectedLoanId(nextLoans[0].id)
+  }, [selectedLoanId, session.token])
+
+  useEffect(() => {
+    loadCustomerData().catch((err) => setError(err instanceof Error ? err.message : 'Veri alinamadi.'))
+  }, [loadCustomerData])
+
+  const submitPayment = async (event: FormEvent) => {
+    event.preventDefault()
+    if (!paymentTarget) return
+    setError('')
+    setNotice('')
+    try {
+      await api.createPayment(session.token, {
+        installmentId: paymentTarget.id,
+        amount: paymentTarget.amount,
+        cardHolderName: paymentForm.cardHolderName,
+        cardNumber: paymentForm.cardNumber,
+        cvv: paymentForm.cvv,
+        expiryMonth: Number(paymentForm.expiryMonth),
+        expiryYear: Number(paymentForm.expiryYear),
+      })
+      setNotice('Odeme alindi.')
+      setPaymentTarget(null)
+      await loadCustomerData()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Odeme alinamadi.')
+    }
+  }
+
   return (
     <main className="workspace">
       <header className="topbar">
         <div>
           <h1>Musteri Paneli</h1>
-          <p>Kredi ozeti</p>
+          <p>{summary?.fullName ?? session.email}</p>
         </div>
+        <button className="secondary-action" type="button" onClick={() => loadCustomerData()}>
+          <RefreshCw size={17} aria-hidden="true" />
+          Yenile
+        </button>
       </header>
+
+      {(error || notice) && <div className={`alert ${error ? 'error' : 'success'}`}>{error || notice}</div>}
+
+      <section className="metrics-grid">
+        <Metric title="Toplam borc" value={formatMoney(summary?.totalLoanDebt ?? 0)} />
+        <Metric title="Kalan ana para" value={formatMoney(summary?.remainingPrincipal ?? 0)} />
+        <Metric title="Kalan borc" value={formatMoney(summary?.remainingDebt ?? 0)} />
+        <Metric title="Gecikmis" value={(summary?.overdueInstallmentCount ?? 0).toString()} />
+      </section>
+
+      <section className="data-grid">
+        <div className="panel">
+          <PanelTitle icon={<Landmark size={18} />} title="Kredilerim" />
+          <div className="list">
+            {loans.map((loan) => (
+              <button
+                type="button"
+                className={`list-row ${selectedLoan?.id === loan.id ? 'selected' : ''}`}
+                key={loan.id}
+                onClick={() => setSelectedLoanId(loan.id)}
+              >
+                <span>
+                  <strong>{loanTypeLabel(loan.type)} · {formatMoney(loan.totalDebt)}</strong>
+                  <small>Kalan {formatMoney(loan.remainingDebt)} · Skor {loan.creditScore}</small>
+                </span>
+                <StatusBadge status={loan.status} />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="panel">
+          <PanelTitle icon={<CreditCard size={18} />} title="Odeme" />
+          {paymentTarget ? (
+            <form className="form-grid dense" onSubmit={submitPayment}>
+              <div className="payment-target">
+                <strong>{formatMoney(paymentTarget.amount)}</strong>
+                <span>{paymentTarget.installmentNumber}. taksit · {formatDate(paymentTarget.dueDate)}</span>
+              </div>
+              <label>Kart sahibi<input value={paymentForm.cardHolderName} onChange={(event) => setPaymentForm({ ...paymentForm, cardHolderName: event.target.value })} /></label>
+              <label>Kart no<input value={paymentForm.cardNumber} onChange={(event) => setPaymentForm({ ...paymentForm, cardNumber: event.target.value })} /></label>
+              <div className="inline-fields">
+                <label>CVV<input value={paymentForm.cvv} onChange={(event) => setPaymentForm({ ...paymentForm, cvv: event.target.value })} /></label>
+                <label>Ay<input value={paymentForm.expiryMonth} type="number" min="1" max="12" onChange={(event) => setPaymentForm({ ...paymentForm, expiryMonth: event.target.value })} /></label>
+              </div>
+              <label>Yil<input value={paymentForm.expiryYear} type="number" min="2026" onChange={(event) => setPaymentForm({ ...paymentForm, expiryYear: event.target.value })} /></label>
+              <div className="button-row">
+                <button className="primary-action" type="submit">
+                  <CreditCard size={17} aria-hidden="true" />
+                  Ode
+                </button>
+                <button className="secondary-action" type="button" onClick={() => setPaymentTarget(null)}>Vazgec</button>
+              </div>
+            </form>
+          ) : (
+            <p className="muted">{summary?.unpaidInstallments.length ?? 0} odenmemis taksit</p>
+          )}
+        </div>
+      </section>
+
+      <section className="panel">
+        <PanelTitle icon={<FileText size={18} />} title="Taksitler" />
+        {selectedLoan ? (
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>No</th>
+                  <th>Tutar</th>
+                  <th>Ana para</th>
+                  <th>Son odeme</th>
+                  <th>Durum</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {selectedLoan.installments.map((installment) => (
+                  <tr key={installment.id}>
+                    <td>{installment.installmentNumber}</td>
+                    <td>{formatMoney(installment.amount)}</td>
+                    <td>{formatMoney(installment.principalAmount)}</td>
+                    <td>{formatDate(installment.dueDate)}</td>
+                    <td><StatusBadge status={installment.status} /></td>
+                    <td>
+                      {installment.status !== 'Paid' && (
+                        <button className="secondary-action slim" type="button" onClick={() => setPaymentTarget(installment)}>
+                          <CreditCard size={15} aria-hidden="true" />
+                          Ode
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="muted">Kredi kaydi yok.</p>
+        )}
+      </section>
     </main>
   )
 }

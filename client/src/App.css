@@ -345,6 +345,31 @@ input:disabled {
   margin-bottom: 12px;
 }
 
+.payment-target {
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-muted);
+}
+
+.payment-target span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.button-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.secondary-action.slim {
+  min-height: 32px;
+  padding: 5px 9px;
+}
+
 .table-wrap {
   overflow: auto;
   border: 1px solid var(--line);
