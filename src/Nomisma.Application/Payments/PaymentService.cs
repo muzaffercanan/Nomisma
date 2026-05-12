@@ -1,33 +1,40 @@
+using System.Data;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Nomisma.Application.Abstractions.Auth;
 using Nomisma.Application.Abstractions.Integrations;
 using Nomisma.Application.Abstractions.Persistence;
 using Nomisma.Application.Common.Exceptions;
+using Nomisma.Application.Common.Validation;
 using Nomisma.Domain.Entities;
 using Nomisma.Domain.Enums;
+using AppValidationException = Nomisma.Application.Common.Exceptions.ValidationException;
 
 namespace Nomisma.Application.Payments;
 
-public sealed class PaymentService
+public sealed class PaymentService : IPaymentService
 {
     private readonly INomismaDbContext _dbContext;
     private readonly ICurrentUserService _currentUser;
     private readonly IPaymentGateway _paymentGateway;
     private readonly ITransactionManager _transactionManager;
+    private readonly IValidator<CreatePaymentRequestDto> _createValidator;
 
     public PaymentService(
         INomismaDbContext dbContext,
         ICurrentUserService currentUser,
         IPaymentGateway paymentGateway,
-        ITransactionManager transactionManager)
+        ITransactionManager transactionManager,
+        IValidator<CreatePaymentRequestDto> createValidator)
     {
         _dbContext = dbContext;
         _currentUser = currentUser;
         _paymentGateway = paymentGateway;
         _transactionManager = transactionManager;
+        _createValidator = createValidator;
     }
 
-    public async Task<IReadOnlyList<PaymentDto>> ListAsync(CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<PaymentResponseDto>> ListAsync(CancellationToken cancellationToken)
     {
         var query = _dbContext.Payments
             .AsNoTracking()
@@ -47,10 +54,10 @@ public sealed class PaymentService
             .OrderByDescending(payment => payment.PaidAtUtc)
             .ToListAsync(cancellationToken);
 
-        return payments.Select(Map).ToList();
+        return payments.Select(PaymentMapper.ToDto).ToList();
     }
 
-    public async Task<PaymentDto> GetAsync(Guid id, CancellationToken cancellationToken)
+    public async Task<PaymentResponseDto> GetAsync(Guid id, CancellationToken cancellationToken)
     {
         var payment = await _dbContext.Payments
             .AsNoTracking()
@@ -60,12 +67,12 @@ public sealed class PaymentService
             ?? throw new NotFoundException("Odeme bulunamadi.");
 
         EnsureCanAccess(payment.Installment?.Loan?.CustomerId);
-        return Map(payment);
+        return PaymentMapper.ToDto(payment);
     }
 
-    public async Task<PaymentDto> CreateAsync(CreatePaymentRequest request, CancellationToken cancellationToken)
+    public async Task<PaymentResponseDto> CreateAsync(CreatePaymentRequestDto request, CancellationToken cancellationToken)
     {
-        ValidateRequest(request);
+        await _createValidator.ValidateAndThrowApplicationExceptionAsync(request, cancellationToken);
 
         var installment = await _dbContext.Installments
             .AsNoTracking()
@@ -77,7 +84,7 @@ public sealed class PaymentService
         EnsureCanAccess(installment.Loan?.CustomerId);
         EnsureInstallmentPayable(installment, request.Amount);
 
-        var gatewayResult = await _paymentGateway.AuthorizeAsync(new PaymentGatewayRequest(
+        var gatewayResult = await _paymentGateway.AuthorizeAsync(new PaymentGatewayRequestDto(
             request.InstallmentId,
             request.Amount,
             request.CardHolderName,
@@ -129,8 +136,8 @@ public sealed class PaymentService
             }
 
             await _dbContext.SaveChangesAsync(cancellationToken);
-            return Map(payment, trackedInstallment, loan);
-        }, cancellationToken);
+            return PaymentMapper.ToDto(payment, trackedInstallment, loan);
+        }, cancellationToken, IsolationLevel.Serializable);
     }
 
     private void EnsureCanAccess(Guid? customerId)
@@ -162,51 +169,8 @@ public sealed class PaymentService
 
         if (requestedAmount != installment.Amount)
         {
-            throw new ValidationException("Odeme tutari tam taksit tutariyla eslesmelidir.");
+            throw new AppValidationException("Odeme tutari tam taksit tutariyla eslesmelidir.");
         }
     }
 
-    private static void ValidateRequest(CreatePaymentRequest request)
-    {
-        if (request.Amount <= 0)
-        {
-            throw new ValidationException("Odeme tutari sifirdan buyuk olmalidir.");
-        }
-
-        if (string.IsNullOrWhiteSpace(request.CardHolderName)
-            || string.IsNullOrWhiteSpace(request.CardNumber)
-            || string.IsNullOrWhiteSpace(request.Cvv))
-        {
-            throw new ValidationException("Kart bilgileri zorunludur.");
-        }
-
-        if (request.ExpiryMonth is < 1 or > 12 || request.ExpiryYear < DateTime.UtcNow.Year)
-        {
-            throw new ValidationException("Kart son kullanma tarihi gecersiz.");
-        }
-    }
-
-    public static PaymentDto Map(Payment payment)
-    {
-        return Map(
-            payment,
-            payment.Installment ?? throw new InvalidOperationException("Payment installment is not loaded."),
-            payment.Installment.Loan ?? throw new InvalidOperationException("Payment loan is not loaded."));
-    }
-
-    private static PaymentDto Map(Payment payment, Installment installment, Loan loan)
-    {
-        return new PaymentDto(
-            payment.Id,
-            payment.InstallmentId,
-            installment.LoanId,
-            loan.CustomerId,
-            payment.Amount,
-            payment.PaidAtUtc,
-            payment.Status,
-            payment.GatewayStatus,
-            payment.GatewayTransactionId,
-            payment.FailureReason);
-    }
 }
-

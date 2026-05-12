@@ -10,44 +10,44 @@ namespace Nomisma.Api.Controllers;
 [Authorize]
 public sealed class CustomersController : ControllerBase
 {
-    private readonly CustomerService _customerService;
+    private readonly ICustomerService _customerService;
 
-    public CustomersController(CustomerService customerService)
+    public CustomersController(ICustomerService customerService)
     {
         _customerService = customerService;
     }
 
     [HttpGet]
     [Authorize(Roles = nameof(UserRole.Admin))]
-    public async Task<ActionResult<IReadOnlyList<CustomerDto>>> List(CancellationToken cancellationToken)
+    public async Task<ActionResult<IReadOnlyList<CustomerResponseDto>>> List(CancellationToken cancellationToken)
     {
         return Ok(await _customerService.ListAsync(cancellationToken));
     }
 
     [HttpGet("{id:guid}")]
     [Authorize(Roles = nameof(UserRole.Admin))]
-    public async Task<ActionResult<CustomerDto>> Get(Guid id, CancellationToken cancellationToken)
+    public async Task<ActionResult<CustomerResponseDto>> Get(Guid id, CancellationToken cancellationToken)
     {
         return Ok(await _customerService.GetAsync(id, cancellationToken));
     }
 
     [HttpGet("{id:guid}/summary")]
     [Authorize(Roles = nameof(UserRole.Admin))]
-    public async Task<ActionResult<CustomerSummaryDto>> GetSummary(Guid id, CancellationToken cancellationToken)
+    public async Task<ActionResult<CustomerSummaryResponseDto>> GetSummary(Guid id, CancellationToken cancellationToken)
     {
         return Ok(await _customerService.GetSummaryAsync(id, cancellationToken));
     }
 
     [HttpGet("me/summary")]
     [Authorize(Roles = nameof(UserRole.Customer))]
-    public async Task<ActionResult<CustomerSummaryDto>> GetMySummary(CancellationToken cancellationToken)
+    public async Task<ActionResult<CustomerSummaryResponseDto>> GetMySummary(CancellationToken cancellationToken)
     {
         return Ok(await _customerService.GetMySummaryAsync(cancellationToken));
     }
 
     [HttpPost]
     [Authorize(Roles = nameof(UserRole.Admin))]
-    public async Task<ActionResult<CustomerDto>> Create(CreateCustomerRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<CustomerResponseDto>> Create(CreateCustomerRequestDto request, CancellationToken cancellationToken)
     {
         var customer = await _customerService.CreateAsync(request, cancellationToken);
         return CreatedAtAction(nameof(Get), new { id = customer.Id }, customer);
@@ -55,7 +55,7 @@ public sealed class CustomersController : ControllerBase
 
     [HttpPut("{id:guid}")]
     [Authorize(Roles = nameof(UserRole.Admin))]
-    public async Task<ActionResult<CustomerDto>> Update(Guid id, UpdateCustomerRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<CustomerResponseDto>> Update(Guid id, UpdateCustomerRequestDto request, CancellationToken cancellationToken)
     {
         return Ok(await _customerService.UpdateAsync(id, request, cancellationToken));
     }

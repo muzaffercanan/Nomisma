@@ -10,24 +10,23 @@ namespace Nomisma.Api.Controllers;
 [Authorize]
 public sealed class InstallmentsController : ControllerBase
 {
-    private readonly InstallmentService _installmentService;
+    private readonly IInstallmentService _installmentService;
 
-    public InstallmentsController(InstallmentService installmentService)
+    public InstallmentsController(IInstallmentService installmentService)
     {
         _installmentService = installmentService;
     }
 
     [HttpGet("{id:guid}")]
-    public async Task<ActionResult<InstallmentDto>> Get(Guid id, CancellationToken cancellationToken)
+    public async Task<ActionResult<InstallmentResponseDto>> Get(Guid id, CancellationToken cancellationToken)
     {
         return Ok(await _installmentService.GetAsync(id, cancellationToken));
     }
 
     [HttpPut("{id:guid}")]
     [Authorize(Roles = nameof(UserRole.Admin))]
-    public async Task<ActionResult<InstallmentDto>> Update(Guid id, UpdateInstallmentRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<InstallmentResponseDto>> Update(Guid id, UpdateInstallmentRequestDto request, CancellationToken cancellationToken)
     {
         return Ok(await _installmentService.UpdateAsync(id, request, cancellationToken));
     }
 }
-

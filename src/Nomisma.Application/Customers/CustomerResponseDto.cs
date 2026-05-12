@@ -1,6 +1,6 @@
 namespace Nomisma.Application.Customers;
 
-public sealed record CustomerDto(
+public sealed record CustomerResponseDto(
     Guid Id,
     string CustomerNumber,
     string FirstName,

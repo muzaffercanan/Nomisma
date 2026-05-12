@@ -1,7 +1,5 @@
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Nomisma.Application.Abstractions.Auth;
-using Nomisma.Infrastructure.Identity;
+using Nomisma.Application.Auth;
 
 namespace Nomisma.Api.Controllers;
 
@@ -9,44 +7,16 @@ namespace Nomisma.Api.Controllers;
 [Route("api/[controller]")]
 public sealed class AuthController : ControllerBase
 {
-    private readonly UserManager<ApplicationUser> _userManager;
-    private readonly IJwtTokenService _jwtTokenService;
+    private readonly IAuthService _authService;
 
-    public AuthController(UserManager<ApplicationUser> userManager, IJwtTokenService jwtTokenService)
+    public AuthController(IAuthService authService)
     {
-        _userManager = userManager;
-        _jwtTokenService = jwtTokenService;
+        _authService = authService;
     }
 
     [HttpPost("login")]
-    public async Task<ActionResult<LoginResponse>> Login(LoginRequest request)
+    public async Task<ActionResult<LoginResponseDto>> Login(LoginRequestDto request, CancellationToken cancellationToken)
     {
-        var user = await _userManager.FindByEmailAsync(request.Email);
-        if (user is null || !await _userManager.CheckPasswordAsync(user, request.Password))
-        {
-            return Unauthorized(new { message = "Email veya sifre hatali." });
-        }
-
-        var roles = await _userManager.GetRolesAsync(user);
-        var token = _jwtTokenService.CreateToken(new JwtUserInfo(
-            user.Id,
-            user.Email ?? request.Email,
-            user.CustomerId,
-            roles.ToArray()));
-
-        return Ok(new LoginResponse(
-            token,
-            user.Email ?? request.Email,
-            user.CustomerId,
-            roles.ToArray()));
+        return Ok(await _authService.LoginAsync(request, cancellationToken));
     }
 }
-
-public sealed record LoginRequest(string Email, string Password);
-
-public sealed record LoginResponse(
-    string Token,
-    string Email,
-    Guid? CustomerId,
-    IReadOnlyCollection<string> Roles);
-

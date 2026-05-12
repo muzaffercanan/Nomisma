@@ -1,33 +1,42 @@
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Nomisma.Application.Abstractions.Auth;
 using Nomisma.Application.Abstractions.Integrations;
 using Nomisma.Application.Abstractions.Persistence;
 using Nomisma.Application.Common.Exceptions;
+using Nomisma.Application.Common.Validation;
 using Nomisma.Application.Installments;
 using Nomisma.Domain.Entities;
 using Nomisma.Domain.Enums;
 using Nomisma.Domain.Loans;
+using AppValidationException = Nomisma.Application.Common.Exceptions.ValidationException;
 
 namespace Nomisma.Application.Loans;
 
-public sealed class LoanService
+public sealed class LoanService : ILoanService
 {
     private readonly INomismaDbContext _dbContext;
     private readonly ICurrentUserService _currentUser;
     private readonly ICreditScoreService _creditScoreService;
+    private readonly IValidator<CreateLoanRequestDto> _createValidator;
+    private readonly IValidator<UpdateLoanRequestDto> _updateValidator;
     private readonly LoanCalculator _loanCalculator = new();
 
     public LoanService(
         INomismaDbContext dbContext,
         ICurrentUserService currentUser,
-        ICreditScoreService creditScoreService)
+        ICreditScoreService creditScoreService,
+        IValidator<CreateLoanRequestDto> createValidator,
+        IValidator<UpdateLoanRequestDto> updateValidator)
     {
         _dbContext = dbContext;
         _currentUser = currentUser;
         _creditScoreService = creditScoreService;
+        _createValidator = createValidator;
+        _updateValidator = updateValidator;
     }
 
-    public async Task<IReadOnlyList<LoanDto>> ListAsync(Guid? customerId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<LoanResponseDto>> ListAsync(Guid? customerId, CancellationToken cancellationToken)
     {
         var query = _dbContext.Loans
             .AsNoTracking()
@@ -49,10 +58,10 @@ public sealed class LoanService
             .OrderByDescending(loan => loan.CreatedAtUtc)
             .ToListAsync(cancellationToken);
 
-        return loans.Select(Map).ToList();
+        return loans.Select(LoanMapper.ToDto).ToList();
     }
 
-    public async Task<LoanDto> GetAsync(Guid id, CancellationToken cancellationToken)
+    public async Task<LoanResponseDto> GetAsync(Guid id, CancellationToken cancellationToken)
     {
         var loan = await _dbContext.Loans
             .AsNoTracking()
@@ -62,17 +71,17 @@ public sealed class LoanService
             ?? throw new NotFoundException("Kredi bulunamadi.");
 
         EnsureCanAccess(loan.CustomerId);
-        return Map(loan);
+        return LoanMapper.ToDto(loan);
     }
 
-    public async Task<LoanDto> CreateAsync(CreateLoanRequest request, CancellationToken cancellationToken)
+    public async Task<LoanResponseDto> CreateAsync(CreateLoanRequestDto request, CancellationToken cancellationToken)
     {
         if (!_currentUser.IsAdmin)
         {
             throw new ForbiddenException("Kredi olusturma islemi yalnizca admin rolune aciktir.");
         }
 
-        ValidateCreate(request);
+        await _createValidator.ValidateAndThrowApplicationExceptionAsync(request, cancellationToken);
 
         var customer = await _dbContext.Customers.FirstOrDefaultAsync(item => item.Id == request.CustomerId, cancellationToken)
             ?? throw new NotFoundException("Musteri bulunamadi.");
@@ -80,7 +89,7 @@ public sealed class LoanService
         var creditScore = await _creditScoreService.GetScoreAsync(customer, cancellationToken);
         if (creditScore < 650)
         {
-            throw new ValidationException($"Kredi skoru yetersiz. Skor: {creditScore}, minimum: 650.");
+            throw new AppValidationException($"Kredi skoru yetersiz. Skor: {creditScore}, minimum: 650.");
         }
 
         var calculation = _loanCalculator.Calculate(request.PrincipalAmount, request.ProfitRate, request.TermMonths, request.StartDate);
@@ -117,12 +126,14 @@ public sealed class LoanService
         return await GetAsync(loan.Id, cancellationToken);
     }
 
-    public async Task<LoanDto> UpdateAsync(Guid id, UpdateLoanRequest request, CancellationToken cancellationToken)
+    public async Task<LoanResponseDto> UpdateAsync(Guid id, UpdateLoanRequestDto request, CancellationToken cancellationToken)
     {
         if (!_currentUser.IsAdmin)
         {
             throw new ForbiddenException("Kredi guncelleme islemi yalnizca admin rolune aciktir.");
         }
+
+        await _updateValidator.ValidateAndThrowApplicationExceptionAsync(request, cancellationToken);
 
         var loan = await _dbContext.Loans
             .Include(item => item.Installments)
@@ -144,10 +155,10 @@ public sealed class LoanService
         loan.ClosedAtUtc = request.Status == LoanStatus.Closed ? DateTimeOffset.UtcNow : null;
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return Map(loan);
+        return LoanMapper.ToDto(loan);
     }
 
-    public async Task<IReadOnlyList<InstallmentDto>> GetInstallmentsAsync(Guid loanId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<InstallmentResponseDto>> GetInstallmentsAsync(Guid loanId, CancellationToken cancellationToken)
     {
         var loan = await _dbContext.Loans
             .AsNoTracking()
@@ -161,7 +172,7 @@ public sealed class LoanService
             .Include(item => item.Payment)
             .Where(item => item.LoanId == loanId)
             .OrderBy(item => item.InstallmentNumber)
-            .Select(item => InstallmentService.Map(item))
+            .Select(item => InstallmentMapper.ToDto(item))
             .ToListAsync(cancellationToken);
     }
 
@@ -180,64 +191,4 @@ public sealed class LoanService
         throw new ForbiddenException("Bu kayda erisim yetkiniz yok.");
     }
 
-    private static void ValidateCreate(CreateLoanRequest request)
-    {
-        if (request.PrincipalAmount <= 0)
-        {
-            throw new ValidationException("Ana para tutari sifirdan buyuk olmalidir.");
-        }
-
-        if (request.ProfitRate < 0)
-        {
-            throw new ValidationException("Kar orani negatif olamaz.");
-        }
-
-        if (request.TermMonths <= 0)
-        {
-            throw new ValidationException("Vade en az 1 ay olmalidir.");
-        }
-    }
-
-    public static LoanDto Map(Loan loan)
-    {
-        RefreshOverdueStatuses(loan.Installments);
-        var installments = loan.Installments
-            .OrderBy(item => item.InstallmentNumber)
-            .Select(InstallmentService.Map)
-            .ToList();
-
-        var paidAmount = installments
-            .Where(item => item.Status == InstallmentStatus.Paid)
-            .Sum(item => item.Amount);
-
-        return new LoanDto(
-            loan.Id,
-            loan.CustomerId,
-            loan.Type,
-            loan.PrincipalAmount,
-            loan.ProfitRate,
-            loan.TermMonths,
-            loan.StartDate,
-            loan.Status,
-            loan.CreditScore,
-            loan.TotalProfit,
-            loan.TotalDebt,
-            paidAmount,
-            loan.TotalDebt - paidAmount,
-            loan.CreatedAtUtc,
-            loan.ClosedAtUtc,
-            installments);
-    }
-
-    private static void RefreshOverdueStatuses(IEnumerable<Installment> installments)
-    {
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        foreach (var installment in installments)
-        {
-            if (installment.Status == InstallmentStatus.Unpaid && installment.DueDate < today)
-            {
-                installment.Status = InstallmentStatus.Overdue;
-            }
-        }
-    }
 }

@@ -20,7 +20,7 @@ import {
   installmentStatusLabel,
   loanTypeLabel,
 } from './api'
-import type { Customer, CustomerSummary, Installment, Loan, Payment, Session } from './api'
+import type { CustomerResponseDto, CustomerSummaryResponseDto, InstallmentResponseDto, LoanResponseDto, PaymentResponseDto, Session } from './api'
 import './App.css'
 
 const sessionKey = 'nomisma.session'
@@ -223,12 +223,12 @@ function AppShell({ session, onLogout, children }: AppShellProps) {
 }
 
 function AdminDashboard({ session }: { session: Session }) {
-  const [customers, setCustomers] = useState<Customer[]>([])
-  const [loans, setLoans] = useState<Loan[]>([])
-  const [payments, setPayments] = useState<Payment[]>([])
+  const [customers, setCustomers] = useState<CustomerResponseDto[]>([])
+  const [loans, setLoans] = useState<LoanResponseDto[]>([])
+  const [payments, setPayments] = useState<PaymentResponseDto[]>([])
   const [selectedCustomerId, setSelectedCustomerId] = useState('')
   const [selectedLoanId, setSelectedLoanId] = useState('')
-  const [summary, setSummary] = useState<CustomerSummary | null>(null)
+  const [summary, setSummary] = useState<CustomerSummaryResponseDto | null>(null)
   const [customerForm, setCustomerForm] = useState<CustomerFormState>(emptyCustomerForm)
   const [editingCustomerId, setEditingCustomerId] = useState<string | null>(null)
   const [loanForm, setLoanForm] = useState<LoanFormState>(emptyLoanForm)
@@ -294,7 +294,7 @@ function AdminDashboard({ session }: { session: Session }) {
     }
   }
 
-  const editCustomer = (customer: Customer) => {
+  const editCustomer = (customer: CustomerResponseDto) => {
     setEditingCustomerId(customer.id)
     setCustomerForm({
       firstName: customer.firstName,
@@ -559,10 +559,10 @@ const defaultPaymentForm: PaymentFormState = {
 }
 
 function CustomerDashboard({ session }: { session: Session }) {
-  const [summary, setSummary] = useState<CustomerSummary | null>(null)
-  const [loans, setLoans] = useState<Loan[]>([])
+  const [summary, setSummary] = useState<CustomerSummaryResponseDto | null>(null)
+  const [loans, setLoans] = useState<LoanResponseDto[]>([])
   const [selectedLoanId, setSelectedLoanId] = useState('')
-  const [paymentTarget, setPaymentTarget] = useState<Installment | null>(null)
+  const [paymentTarget, setPaymentTarget] = useState<InstallmentResponseDto | null>(null)
   const [paymentForm, setPaymentForm] = useState<PaymentFormState>(defaultPaymentForm)
   const [notice, setNotice] = useState('')
   const [error, setError] = useState('')

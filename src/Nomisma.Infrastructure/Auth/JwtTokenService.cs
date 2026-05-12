@@ -16,7 +16,7 @@ public sealed class JwtTokenService : IJwtTokenService
         _options = options.Value;
     }
 
-    public string CreateToken(JwtUserInfo user)
+    public string CreateToken(JwtUserInfoDto user)
     {
         if (string.IsNullOrWhiteSpace(_options.Secret) || _options.Secret.Length < 32)
         {

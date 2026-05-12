@@ -1,6 +1,6 @@
 namespace Nomisma.Application.Abstractions.Auth;
 
-public sealed record JwtUserInfo(
+public sealed record JwtUserInfoDto(
     Guid UserId,
     string Email,
     Guid? CustomerId,

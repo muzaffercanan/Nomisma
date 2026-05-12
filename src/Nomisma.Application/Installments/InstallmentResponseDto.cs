@@ -2,7 +2,7 @@ using Nomisma.Domain.Enums;
 
 namespace Nomisma.Application.Installments;
 
-public sealed record InstallmentDto(
+public sealed record InstallmentResponseDto(
     Guid Id,
     Guid LoanId,
     int InstallmentNumber,

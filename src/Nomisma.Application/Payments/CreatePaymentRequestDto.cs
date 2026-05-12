@@ -1,6 +1,6 @@
 namespace Nomisma.Application.Payments;
 
-public sealed record CreatePaymentRequest(
+public sealed record CreatePaymentRequestDto(
     Guid InstallmentId,
     decimal Amount,
     string CardHolderName,

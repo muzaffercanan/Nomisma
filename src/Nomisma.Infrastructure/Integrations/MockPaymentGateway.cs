@@ -5,7 +5,7 @@ namespace Nomisma.Infrastructure.Integrations;
 
 public sealed class MockPaymentGateway : IPaymentGateway
 {
-    public Task<PaymentGatewayResult> AuthorizeAsync(PaymentGatewayRequest request, CancellationToken cancellationToken)
+    public Task<PaymentGatewayResultDto> AuthorizeAsync(PaymentGatewayRequestDto request, CancellationToken cancellationToken)
     {
         var normalizedCard = new string(request.CardNumber.Where(char.IsDigit).ToArray());
 
@@ -25,14 +25,14 @@ public sealed class MockPaymentGateway : IPaymentGateway
         }
 
         var transactionId = $"MOCK-{DateTimeOffset.UtcNow:yyyyMMddHHmmssfff}-{Guid.NewGuid():N}"[..37];
-        var result = new PaymentGatewayResult(true, GatewayStatus.Approved, transactionId, null);
+        var result = new PaymentGatewayResultDto(true, GatewayStatus.Approved, transactionId, null);
         return Task.FromResult(result);
     }
 
-    private static Task<PaymentGatewayResult> Declined(string reason)
+    private static Task<PaymentGatewayResultDto> Declined(string reason)
     {
         var transactionId = $"DECLINED-{Guid.NewGuid():N}"[..37];
-        var result = new PaymentGatewayResult(false, GatewayStatus.Declined, transactionId, reason);
+        var result = new PaymentGatewayResultDto(false, GatewayStatus.Declined, transactionId, reason);
         return Task.FromResult(result);
     }
 }

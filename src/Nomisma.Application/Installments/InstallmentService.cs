@@ -1,24 +1,30 @@
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Nomisma.Application.Abstractions.Auth;
 using Nomisma.Application.Abstractions.Persistence;
 using Nomisma.Application.Common.Exceptions;
-using Nomisma.Domain.Entities;
+using Nomisma.Application.Common.Validation;
 using Nomisma.Domain.Enums;
 
 namespace Nomisma.Application.Installments;
 
-public sealed class InstallmentService
+public sealed class InstallmentService : IInstallmentService
 {
     private readonly INomismaDbContext _dbContext;
     private readonly ICurrentUserService _currentUser;
+    private readonly IValidator<UpdateInstallmentRequestDto> _updateValidator;
 
-    public InstallmentService(INomismaDbContext dbContext, ICurrentUserService currentUser)
+    public InstallmentService(
+        INomismaDbContext dbContext,
+        ICurrentUserService currentUser,
+        IValidator<UpdateInstallmentRequestDto> updateValidator)
     {
         _dbContext = dbContext;
         _currentUser = currentUser;
+        _updateValidator = updateValidator;
     }
 
-    public async Task<InstallmentDto> GetAsync(Guid id, CancellationToken cancellationToken)
+    public async Task<InstallmentResponseDto> GetAsync(Guid id, CancellationToken cancellationToken)
     {
         var installment = await _dbContext.Installments
             .AsNoTracking()
@@ -28,16 +34,17 @@ public sealed class InstallmentService
             ?? throw new NotFoundException("Taksit bulunamadi.");
 
         EnsureCanAccess(installment.Loan?.CustomerId);
-        RefreshOverdueStatus(installment);
-        return Map(installment);
+        return InstallmentMapper.ToDto(installment);
     }
 
-    public async Task<InstallmentDto> UpdateAsync(Guid id, UpdateInstallmentRequest request, CancellationToken cancellationToken)
+    public async Task<InstallmentResponseDto> UpdateAsync(Guid id, UpdateInstallmentRequestDto request, CancellationToken cancellationToken)
     {
         if (!_currentUser.IsAdmin)
         {
             throw new ForbiddenException("Taksit guncelleme islemi yalnizca admin rolune aciktir.");
         }
+
+        await _updateValidator.ValidateAndThrowApplicationExceptionAsync(request, cancellationToken);
 
         var installment = await _dbContext.Installments
             .Include(item => item.Payment)
@@ -49,16 +56,11 @@ public sealed class InstallmentService
             throw new ConflictException("Odenmis taksit guncellenemez.");
         }
 
-        if (request.Status == InstallmentStatus.Paid)
-        {
-            throw new ValidationException("Taksit odendi durumuna yalnizca odeme islemiyle alinabilir.");
-        }
-
         installment.DueDate = request.DueDate;
         installment.Status = request.Status;
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return Map(installment);
+        return InstallmentMapper.ToDto(installment);
     }
 
     private void EnsureCanAccess(Guid? customerId)
@@ -76,29 +78,4 @@ public sealed class InstallmentService
         throw new ForbiddenException("Bu takside erisim yetkiniz yok.");
     }
 
-    public static InstallmentDto Map(Installment installment)
-    {
-        RefreshOverdueStatus(installment);
-        return new InstallmentDto(
-            installment.Id,
-            installment.LoanId,
-            installment.InstallmentNumber,
-            installment.PrincipalAmount,
-            installment.ProfitAmount,
-            installment.Amount,
-            installment.DueDate,
-            installment.Status,
-            installment.PaidAtUtc,
-            installment.Payment is not null);
-    }
-
-    private static void RefreshOverdueStatus(Installment installment)
-    {
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        if (installment.Status == InstallmentStatus.Unpaid && installment.DueDate < today)
-        {
-            installment.Status = InstallmentStatus.Overdue;
-        }
-    }
 }
-

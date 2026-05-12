@@ -1,3 +1,4 @@
+using System.Data;
 using Microsoft.EntityFrameworkCore;
 using Nomisma.Application.Abstractions.Auth;
 using Nomisma.Application.Abstractions.Integrations;
@@ -79,13 +80,14 @@ public sealed class PaymentServiceTests
         return new NomismaDbContext(options);
     }
 
-    private static PaymentService CreateService(NomismaDbContext dbContext, PaymentGatewayResult gatewayResult)
+    private static PaymentService CreateService(NomismaDbContext dbContext, PaymentGatewayResultDto gatewayResult)
     {
         return new PaymentService(
             dbContext,
             new TestCurrentUserService(),
             new TestPaymentGateway(gatewayResult),
-            new InlineTransactionManager());
+            new InlineTransactionManager(),
+            new CreatePaymentRequestDtoValidator());
     }
 
     private static async Task<Installment> SeedLoanAsync(NomismaDbContext dbContext, int installmentCount)
@@ -135,9 +137,9 @@ public sealed class PaymentServiceTests
         return await dbContext.Installments.OrderBy(item => item.InstallmentNumber).FirstAsync();
     }
 
-    private static CreatePaymentRequest CreateRequest(Guid installmentId, decimal amount)
+    private static CreatePaymentRequestDto CreateRequest(Guid installmentId, decimal amount)
     {
-        return new CreatePaymentRequest(
+        return new CreatePaymentRequestDto(
             installmentId,
             amount,
             "Test Customer",
@@ -157,14 +159,14 @@ public sealed class PaymentServiceTests
 
     private sealed class TestPaymentGateway : IPaymentGateway
     {
-        private readonly PaymentGatewayResult _result;
+        private readonly PaymentGatewayResultDto _result;
 
-        public TestPaymentGateway(PaymentGatewayResult result)
+        public TestPaymentGateway(PaymentGatewayResultDto result)
         {
             _result = result;
         }
 
-        public Task<PaymentGatewayResult> AuthorizeAsync(PaymentGatewayRequest request, CancellationToken cancellationToken)
+        public Task<PaymentGatewayResultDto> AuthorizeAsync(PaymentGatewayRequestDto request, CancellationToken cancellationToken)
         {
             return Task.FromResult(_result);
         }
@@ -172,7 +174,10 @@ public sealed class PaymentServiceTests
 
     private sealed class InlineTransactionManager : ITransactionManager
     {
-        public Task<T> ExecuteAsync<T>(Func<Task<T>> operation, CancellationToken cancellationToken)
+        public Task<T> ExecuteAsync<T>(
+            Func<Task<T>> operation,
+            CancellationToken cancellationToken,
+            IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
         {
             return operation();
         }
@@ -181,13 +186,13 @@ public sealed class PaymentServiceTests
 
 internal static class PaymentGatewayResultFactory
 {
-    public static PaymentGatewayResult Approved(string transactionId)
+    public static PaymentGatewayResultDto Approved(string transactionId)
     {
-        return new PaymentGatewayResult(true, GatewayStatus.Approved, transactionId, null);
+        return new PaymentGatewayResultDto(true, GatewayStatus.Approved, transactionId, null);
     }
 
-    public static PaymentGatewayResult Declined(string transactionId, string reason)
+    public static PaymentGatewayResultDto Declined(string transactionId, string reason)
     {
-        return new PaymentGatewayResult(false, GatewayStatus.Declined, transactionId, reason);
+        return new PaymentGatewayResultDto(false, GatewayStatus.Declined, transactionId, reason);
     }
 }

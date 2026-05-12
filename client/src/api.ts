@@ -15,7 +15,7 @@ export type InstallmentStatus = 'Unpaid' | 'Paid' | 'Overdue'
 export type PaymentStatus = 'Completed' | 'Failed'
 export type GatewayStatus = 'NotSent' | 'Approved' | 'Declined'
 
-export type Customer = {
+export type CustomerResponseDto = {
   id: string
   customerNumber: string
   firstName: string
@@ -30,7 +30,7 @@ export type Customer = {
   updatedAtUtc: string | null
 }
 
-export type CreateCustomerRequest = {
+export type CreateCustomerRequestDto = {
   firstName: string
   lastName: string
   nationalId: string
@@ -41,9 +41,9 @@ export type CreateCustomerRequest = {
   password: string
 }
 
-export type UpdateCustomerRequest = Omit<CreateCustomerRequest, 'nationalId' | 'password'>
+export type UpdateCustomerRequestDto = Omit<CreateCustomerRequestDto, 'nationalId' | 'password'>
 
-export type Installment = {
+export type InstallmentResponseDto = {
   id: string
   loanId: string
   installmentNumber: number
@@ -56,7 +56,7 @@ export type Installment = {
   hasPayment: boolean
 }
 
-export type Loan = {
+export type LoanResponseDto = {
   id: string
   customerId: string
   type: LoanType
@@ -72,10 +72,10 @@ export type Loan = {
   remainingDebt: number
   createdAtUtc: string
   closedAtUtc: string | null
-  installments: Installment[]
+  installments: InstallmentResponseDto[]
 }
 
-export type CreateLoanRequest = {
+export type CreateLoanRequestDto = {
   customerId: string
   type: LoanType
   principalAmount: number
@@ -84,7 +84,7 @@ export type CreateLoanRequest = {
   startDate: string
 }
 
-export type Payment = {
+export type PaymentResponseDto = {
   id: string
   installmentId: string
   loanId: string
@@ -97,7 +97,7 @@ export type Payment = {
   failureReason: string | null
 }
 
-export type CustomerSummary = {
+export type CustomerSummaryResponseDto = {
   customerId: string
   customerNumber: string
   fullName: string
@@ -105,11 +105,11 @@ export type CustomerSummary = {
   remainingPrincipal: number
   remainingDebt: number
   overdueInstallmentCount: number
-  paidInstallments: Installment[]
-  unpaidInstallments: Installment[]
+  paidInstallments: InstallmentResponseDto[]
+  unpaidInstallments: InstallmentResponseDto[]
 }
 
-export type CreatePaymentRequest = {
+export type CreatePaymentRequestDto = {
   installmentId: string
   amount: number
   cardHolderName: string
@@ -160,29 +160,29 @@ export const api = {
       method: 'POST',
       body: { email, password },
     }),
-  customers: (token: string) => apiRequest<Customer[]>('/api/customers', { token }),
-  customer: (token: string, id: string) => apiRequest<Customer>(`/api/customers/${id}`, { token }),
-  createCustomer: (token: string, body: CreateCustomerRequest) =>
-    apiRequest<Customer>('/api/customers', { token, method: 'POST', body }),
-  updateCustomer: (token: string, id: string, body: UpdateCustomerRequest) =>
-    apiRequest<Customer>(`/api/customers/${id}`, { token, method: 'PUT', body }),
+  customers: (token: string) => apiRequest<CustomerResponseDto[]>('/api/customers', { token }),
+  customer: (token: string, id: string) => apiRequest<CustomerResponseDto>(`/api/customers/${id}`, { token }),
+  createCustomer: (token: string, body: CreateCustomerRequestDto) =>
+    apiRequest<CustomerResponseDto>('/api/customers', { token, method: 'POST', body }),
+  updateCustomer: (token: string, id: string, body: UpdateCustomerRequestDto) =>
+    apiRequest<CustomerResponseDto>(`/api/customers/${id}`, { token, method: 'PUT', body }),
   deleteCustomer: (token: string, id: string) =>
     apiRequest<void>(`/api/customers/${id}`, { token, method: 'DELETE' }),
   customerSummary: (token: string, id: string) =>
-    apiRequest<CustomerSummary>(`/api/customers/${id}/summary`, { token }),
-  mySummary: (token: string) => apiRequest<CustomerSummary>('/api/customers/me/summary', { token }),
+    apiRequest<CustomerSummaryResponseDto>(`/api/customers/${id}/summary`, { token }),
+  mySummary: (token: string) => apiRequest<CustomerSummaryResponseDto>('/api/customers/me/summary', { token }),
   loans: (token: string, customerId?: string) =>
-    apiRequest<Loan[]>(`/api/loans${customerId ? `?customerId=${customerId}` : ''}`, { token }),
-  loan: (token: string, id: string) => apiRequest<Loan>(`/api/loans/${id}`, { token }),
-  createLoan: (token: string, body: CreateLoanRequest) =>
-    apiRequest<Loan>('/api/loans', { token, method: 'POST', body }),
+    apiRequest<LoanResponseDto[]>(`/api/loans${customerId ? `?customerId=${customerId}` : ''}`, { token }),
+  loan: (token: string, id: string) => apiRequest<LoanResponseDto>(`/api/loans/${id}`, { token }),
+  createLoan: (token: string, body: CreateLoanRequestDto) =>
+    apiRequest<LoanResponseDto>('/api/loans', { token, method: 'POST', body }),
   closeLoan: (token: string, id: string) =>
-    apiRequest<Loan>(`/api/loans/${id}`, { token, method: 'PUT', body: { status: 'Closed' } }),
+    apiRequest<LoanResponseDto>(`/api/loans/${id}`, { token, method: 'PUT', body: { status: 'Closed' } }),
   installments: (token: string, loanId: string) =>
-    apiRequest<Installment[]>(`/api/loans/${loanId}/installments`, { token }),
-  payments: (token: string) => apiRequest<Payment[]>('/api/payments', { token }),
-  createPayment: (token: string, body: CreatePaymentRequest) =>
-    apiRequest<Payment>('/api/payments', { token, method: 'POST', body }),
+    apiRequest<InstallmentResponseDto[]>(`/api/loans/${loanId}/installments`, { token }),
+  payments: (token: string) => apiRequest<PaymentResponseDto[]>('/api/payments', { token }),
+  createPayment: (token: string, body: CreatePaymentRequestDto) =>
+    apiRequest<PaymentResponseDto>('/api/payments', { token, method: 'POST', body }),
 }
 
 export function formatMoney(value: number) {

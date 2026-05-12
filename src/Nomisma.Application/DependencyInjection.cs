@@ -1,3 +1,4 @@
+using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Nomisma.Application.Customers;
 using Nomisma.Application.Installments;
@@ -10,10 +11,11 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
-        services.AddScoped<CustomerService>();
-        services.AddScoped<LoanService>();
-        services.AddScoped<InstallmentService>();
-        services.AddScoped<PaymentService>();
+        services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
+        services.AddScoped<ICustomerService, CustomerService>();
+        services.AddScoped<ILoanService, LoanService>();
+        services.AddScoped<IInstallmentService, InstallmentService>();
+        services.AddScoped<IPaymentService, PaymentService>();
 
         return services;
     }

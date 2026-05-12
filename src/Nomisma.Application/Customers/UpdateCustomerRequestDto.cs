@@ -1,6 +1,6 @@
 namespace Nomisma.Application.Customers;
 
-public sealed record UpdateCustomerRequest(
+public sealed record UpdateCustomerRequestDto(
     string FirstName,
     string LastName,
     string Email,

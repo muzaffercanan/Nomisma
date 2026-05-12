@@ -1,40 +1,47 @@
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Nomisma.Application.Abstractions.Auth;
 using Nomisma.Application.Abstractions.Persistence;
 using Nomisma.Application.Common.Exceptions;
-using Nomisma.Application.Installments;
+using Nomisma.Application.Common.Validation;
 using Nomisma.Domain.Entities;
 using Nomisma.Domain.Enums;
 
 namespace Nomisma.Application.Customers;
 
-public sealed class CustomerService
+public sealed class CustomerService : ICustomerService
 {
     private readonly INomismaDbContext _dbContext;
     private readonly IUserAccountService _userAccountService;
     private readonly ICurrentUserService _currentUser;
+    private readonly IValidator<CreateCustomerRequestDto> _createValidator;
+    private readonly IValidator<UpdateCustomerRequestDto> _updateValidator;
 
     public CustomerService(
         INomismaDbContext dbContext,
         IUserAccountService userAccountService,
-        ICurrentUserService currentUser)
+        ICurrentUserService currentUser,
+        IValidator<CreateCustomerRequestDto> createValidator,
+        IValidator<UpdateCustomerRequestDto> updateValidator)
     {
         _dbContext = dbContext;
         _userAccountService = userAccountService;
         _currentUser = currentUser;
+        _createValidator = createValidator;
+        _updateValidator = updateValidator;
     }
 
-    public async Task<IReadOnlyList<CustomerDto>> ListAsync(CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<CustomerResponseDto>> ListAsync(CancellationToken cancellationToken)
     {
         var customers = await _dbContext.Customers
             .AsNoTracking()
             .OrderBy(customer => customer.CustomerNumber)
             .ToListAsync(cancellationToken);
 
-        return customers.Select(Map).ToList();
+        return customers.Select(CustomerMapper.ToDto).ToList();
     }
 
-    public async Task<CustomerDto> GetAsync(Guid id, CancellationToken cancellationToken)
+    public async Task<CustomerResponseDto> GetAsync(Guid id, CancellationToken cancellationToken)
     {
         var customer = await _dbContext.Customers
             .AsNoTracking()
@@ -42,12 +49,12 @@ public sealed class CustomerService
 
         return customer is null
             ? throw new NotFoundException("Musteri bulunamadi.")
-            : Map(customer);
+            : CustomerMapper.ToDto(customer);
     }
 
-    public async Task<CustomerDto> CreateAsync(CreateCustomerRequest request, CancellationToken cancellationToken)
+    public async Task<CustomerResponseDto> CreateAsync(CreateCustomerRequestDto request, CancellationToken cancellationToken)
     {
-        ValidateCreate(request);
+        await _createValidator.ValidateAndThrowApplicationExceptionAsync(request, cancellationToken);
         await EnsureUniqueAsync(request.NationalId, request.Email, null, cancellationToken);
 
         var customer = new Customer
@@ -66,12 +73,12 @@ public sealed class CustomerService
         await _dbContext.SaveChangesAsync(cancellationToken);
         await _userAccountService.CreateCustomerUserAsync(customer.Email, request.Password, customer.Id, cancellationToken);
 
-        return Map(customer);
+        return CustomerMapper.ToDto(customer);
     }
 
-    public async Task<CustomerDto> UpdateAsync(Guid id, UpdateCustomerRequest request, CancellationToken cancellationToken)
+    public async Task<CustomerResponseDto> UpdateAsync(Guid id, UpdateCustomerRequestDto request, CancellationToken cancellationToken)
     {
-        ValidateUpdate(request);
+        await _updateValidator.ValidateAndThrowApplicationExceptionAsync(request, cancellationToken);
         var customer = await _dbContext.Customers.FirstOrDefaultAsync(item => item.Id == id, cancellationToken)
             ?? throw new NotFoundException("Musteri bulunamadi.");
 
@@ -89,7 +96,7 @@ public sealed class CustomerService
         await _dbContext.SaveChangesAsync(cancellationToken);
         await _userAccountService.UpdateCustomerEmailAsync(customer.Id, customer.Email, cancellationToken);
 
-        return Map(customer);
+        return CustomerMapper.ToDto(customer);
     }
 
     public async Task DeleteAsync(Guid id, CancellationToken cancellationToken)
@@ -110,7 +117,7 @@ public sealed class CustomerService
         await _userAccountService.DisableCustomerUserAsync(customer.Id, cancellationToken);
     }
 
-    public async Task<CustomerSummaryDto> GetSummaryAsync(Guid id, CancellationToken cancellationToken)
+    public async Task<CustomerSummaryResponseDto> GetSummaryAsync(Guid id, CancellationToken cancellationToken)
     {
         EnsureCanAccess(id);
         await MarkOverdueInstallmentsAsync(id, cancellationToken);
@@ -123,35 +130,10 @@ public sealed class CustomerService
             .FirstOrDefaultAsync(item => item.Id == id, cancellationToken)
             ?? throw new NotFoundException("Musteri bulunamadi.");
 
-        var installments = customer.Loans
-            .SelectMany(loan => loan.Installments)
-            .OrderBy(item => item.DueDate)
-            .ThenBy(item => item.InstallmentNumber)
-            .ToList();
-
-        var paid = installments
-            .Where(item => item.Status == InstallmentStatus.Paid)
-            .Select(InstallmentService.Map)
-            .ToList();
-
-        var unpaid = installments
-            .Where(item => item.Status != InstallmentStatus.Paid)
-            .Select(InstallmentService.Map)
-            .ToList();
-
-        return new CustomerSummaryDto(
-            customer.Id,
-            customer.CustomerNumber,
-            customer.FullName,
-            customer.Loans.Sum(loan => loan.TotalDebt),
-            installments.Where(item => item.Status != InstallmentStatus.Paid).Sum(item => item.PrincipalAmount),
-            installments.Where(item => item.Status != InstallmentStatus.Paid).Sum(item => item.Amount),
-            installments.Count(item => item.Status == InstallmentStatus.Overdue),
-            paid,
-            unpaid);
+        return CustomerMapper.ToSummaryDto(customer);
     }
 
-    public async Task<CustomerSummaryDto> GetMySummaryAsync(CancellationToken cancellationToken)
+    public async Task<CustomerSummaryResponseDto> GetMySummaryAsync(CancellationToken cancellationToken)
     {
         var customerId = _currentUser.CustomerId
             ?? throw new ForbiddenException("Musteri baglantisi bulunamadi.");
@@ -219,55 +201,4 @@ public sealed class CustomerService
         }
     }
 
-    private static void ValidateCreate(CreateCustomerRequest request)
-    {
-        if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 8)
-        {
-            throw new ValidationException("Sifre en az 8 karakter olmalidir.");
-        }
-
-        ValidateCommon(request.FirstName, request.LastName, request.Email, request.NationalId, request.PhoneNumber);
-    }
-
-    private static void ValidateUpdate(UpdateCustomerRequest request)
-    {
-        ValidateCommon(request.FirstName, request.LastName, request.Email, "10000000000", request.PhoneNumber);
-    }
-
-    private static void ValidateCommon(string firstName, string lastName, string email, string nationalId, string phoneNumber)
-    {
-        if (string.IsNullOrWhiteSpace(firstName) || string.IsNullOrWhiteSpace(lastName))
-        {
-            throw new ValidationException("Ad ve soyad zorunludur.");
-        }
-
-        if (string.IsNullOrWhiteSpace(email) || !email.Contains('@', StringComparison.Ordinal))
-        {
-            throw new ValidationException("Gecerli bir email girilmelidir.");
-        }
-
-        if (string.IsNullOrWhiteSpace(nationalId) || nationalId.Trim().Length < 10)
-        {
-            throw new ValidationException("Kimlik numarasi en az 10 karakter olmalidir.");
-        }
-
-        if (string.IsNullOrWhiteSpace(phoneNumber))
-        {
-            throw new ValidationException("Telefon numarasi zorunludur.");
-        }
-    }
-
-    private static CustomerDto Map(Customer customer) => new(
-        customer.Id,
-        customer.CustomerNumber,
-        customer.FirstName,
-        customer.LastName,
-        customer.FullName,
-        customer.NationalId,
-        customer.Email,
-        customer.PhoneNumber,
-        customer.Address,
-        customer.DateOfBirth,
-        customer.CreatedAtUtc,
-        customer.UpdatedAtUtc);
 }

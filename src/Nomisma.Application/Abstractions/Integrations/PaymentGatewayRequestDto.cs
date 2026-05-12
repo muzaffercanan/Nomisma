@@ -1,6 +1,6 @@
 namespace Nomisma.Application.Abstractions.Integrations;
 
-public sealed record PaymentGatewayRequest(
+public sealed record PaymentGatewayRequestDto(
     Guid InstallmentId,
     decimal Amount,
     string CardHolderName,

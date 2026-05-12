@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Nomisma.Application.Abstractions.Auth;
+using Nomisma.Application.Auth;
 using Nomisma.Infrastructure.Auth;
 using Nomisma.Infrastructure.Identity;
 using Nomisma.Application.Abstractions.Persistence;
@@ -47,6 +48,7 @@ public static class DependencyInjection
             .AddEntityFrameworkStores<NomismaDbContext>();
 
         services.AddScoped<IJwtTokenService, JwtTokenService>();
+        services.AddScoped<IAuthService, IdentityAuthService>();
         services.AddScoped<IUserAccountService, UserAccountService>();
         services.AddScoped<ICreditScoreService, MockCreditScoreService>();
         services.AddScoped<IPaymentGateway, MockPaymentGateway>();

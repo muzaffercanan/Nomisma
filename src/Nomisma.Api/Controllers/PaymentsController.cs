@@ -9,30 +9,29 @@ namespace Nomisma.Api.Controllers;
 [Authorize]
 public sealed class PaymentsController : ControllerBase
 {
-    private readonly PaymentService _paymentService;
+    private readonly IPaymentService _paymentService;
 
-    public PaymentsController(PaymentService paymentService)
+    public PaymentsController(IPaymentService paymentService)
     {
         _paymentService = paymentService;
     }
 
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<PaymentDto>>> List(CancellationToken cancellationToken)
+    public async Task<ActionResult<IReadOnlyList<PaymentResponseDto>>> List(CancellationToken cancellationToken)
     {
         return Ok(await _paymentService.ListAsync(cancellationToken));
     }
 
     [HttpGet("{id:guid}")]
-    public async Task<ActionResult<PaymentDto>> Get(Guid id, CancellationToken cancellationToken)
+    public async Task<ActionResult<PaymentResponseDto>> Get(Guid id, CancellationToken cancellationToken)
     {
         return Ok(await _paymentService.GetAsync(id, cancellationToken));
     }
 
     [HttpPost]
-    public async Task<ActionResult<PaymentDto>> Create(CreatePaymentRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<PaymentResponseDto>> Create(CreatePaymentRequestDto request, CancellationToken cancellationToken)
     {
         var payment = await _paymentService.CreateAsync(request, cancellationToken);
         return CreatedAtAction(nameof(Get), new { id = payment.Id }, payment);
     }
 }
-

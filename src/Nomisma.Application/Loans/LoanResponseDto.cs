@@ -3,7 +3,7 @@ using Nomisma.Domain.Enums;
 
 namespace Nomisma.Application.Loans;
 
-public sealed record LoanDto(
+public sealed record LoanResponseDto(
     Guid Id,
     Guid CustomerId,
     LoanType Type,
@@ -19,5 +19,5 @@ public sealed record LoanDto(
     decimal RemainingDebt,
     DateTimeOffset CreatedAtUtc,
     DateTimeOffset? ClosedAtUtc,
-    IReadOnlyList<InstallmentDto> Installments);
+    IReadOnlyList<InstallmentResponseDto> Installments);
 

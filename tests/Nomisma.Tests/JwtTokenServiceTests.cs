@@ -19,7 +19,7 @@ public sealed class JwtTokenServiceTests
         }));
         var customerId = Guid.NewGuid();
 
-        var token = service.CreateToken(new JwtUserInfo(
+        var token = service.CreateToken(new JwtUserInfoDto(
             Guid.NewGuid(),
             "customer@nomisma.local",
             customerId,

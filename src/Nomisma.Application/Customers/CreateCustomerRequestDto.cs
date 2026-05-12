@@ -1,6 +1,6 @@
 namespace Nomisma.Application.Customers;
 
-public sealed record CreateCustomerRequest(
+public sealed record CreateCustomerRequestDto(
     string FirstName,
     string LastName,
     string NationalId,

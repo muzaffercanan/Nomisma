@@ -5,11 +5,28 @@ obj/
 *.user
 *.suo
 
+logs/
+*.log
+
 client/node_modules/
 client/dist/
 client/.vite/
 
+.env
+.env.*
+!.env.example
+
+appsettings.Local.json
+appsettings.*.Local.json
+appsettings.Production.json
+
+*.pfx
+*.pem
+*.key
+*.crt
+
 *.db
 *.db-shm
 *.db-wal
-
+*.mdf
+*.ldf

@@ -2,7 +2,7 @@ using Nomisma.Application.Installments;
 
 namespace Nomisma.Application.Customers;
 
-public sealed record CustomerSummaryDto(
+public sealed record CustomerSummaryResponseDto(
     Guid CustomerId,
     string CustomerNumber,
     string FullName,
@@ -10,6 +10,6 @@ public sealed record CustomerSummaryDto(
     decimal RemainingPrincipal,
     decimal RemainingDebt,
     int OverdueInstallmentCount,
-    IReadOnlyList<InstallmentDto> PaidInstallments,
-    IReadOnlyList<InstallmentDto> UnpaidInstallments);
+    IReadOnlyList<InstallmentResponseDto> PaidInstallments,
+    IReadOnlyList<InstallmentResponseDto> UnpaidInstallments);
 
