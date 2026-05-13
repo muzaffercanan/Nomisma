@@ -191,3 +191,18 @@ dotnet test
 cd client
 npm run build
 ```
+
+## Yapay Zeka Kullanımı
+
+Bu projede geliştirme sürecinde yapay zeka araçlarından (Claude) yararlanılmıştır.
+
+**Kullanılan alanlar:**
+
+- Mimari iskelet — Clean Architecture katman yapısı ve proje dizin düzeni için fikir alınmıştır.
+- Boilerplate üretimi — EF Core entity konfigürasyonları, DTO sınıfları ve FluentValidation kuralları için taslak oluşturulmuştur.
+- Diyagram sözdizimi — Mermaid ER ve flowchart bloklarının sözdizimi için yardım alınmıştır.
+- README taslağı — Bölüm başlıkları ve açıklama metinleri için ilk taslak üretilmiştir.
+
+**Nasıl kullanıldı:**
+
+AI tarafından üretilen çıktılar doğrudan kopyalanmamıştır. Her çıktı gözden geçirilmiş, projenin gerçek domain mantığına göre düzenlenmiş ve manuel olarak test edilmiştir. Finansal hesaplama modeli (`LoanCalculator`), kredi skoru eşiği, ödeme gateway akışı ve iş kuralları tarafımdan tasarlanmıştır.
