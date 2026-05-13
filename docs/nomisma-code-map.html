@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Nomisma Kod Haritasi</title>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --panel: #ffffff;
+      --ink: #162033;
+      --muted: #647084;
+      --line: #d8deea;
+      --api: #246bfe;
+      --app: #0d8f72;
+      --domain: #b56600;
+      --infra: #7b4bd8;
+      --test: #506070;
+      --shadow: 0 18px 45px rgba(22, 32, 51, .10);
+      --radius: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      border-bottom: 1px solid var(--line);
+      background: rgba(246, 247, 251, .94);
+      backdrop-filter: blur(14px);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 18px 28px;
+    }
+
+    .title-block h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 760;
+      letter-spacing: 0;
+    }
+
+    .title-block p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 360px;
+    }
+
+    .search {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      font-size: 14px;
+      padding: 11px 12px;
+      outline: none;
+    }
+
+    .search:focus {
+      border-color: var(--api);
+      box-shadow: 0 0 0 3px rgba(36, 107, 254, .14);
+    }
+
+    main {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 26px 28px 56px;
+    }
+
+    .intro {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+
+    .flow,
+    .legend {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .flow {
+      padding: 22px;
+    }
+
+    .flow h2,
+    .legend h2,
+    .layer h2 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 720;
+      letter-spacing: 0;
+    }
+
+    .flow-row {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(130px, 1fr));
+      gap: 12px;
+      align-items: stretch;
+      margin-top: 18px;
+    }
+
+    .flow-step {
+      position: relative;
+      min-height: 92px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px;
+      background: #fbfcff;
+    }
+
+    .flow-step:not(:last-child)::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      right: -13px;
+      width: 13px;
+      height: 2px;
+      background: var(--line);
+    }
+
+    .flow-step strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 15px;
+    }
+
+    .flow-step span {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .legend {
+      padding: 22px;
+    }
+
+    .legend-grid {
+      display: grid;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .dot {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      flex: 0 0 auto;
+    }
+
+    .dot.api { background: var(--api); }
+    .dot.app { background: var(--app); }
+    .dot.domain { background: var(--domain); }
+    .dot.infra { background: var(--infra); }
+    .dot.test { background: var(--test); }
+
+    .map {
+      display: grid;
+      gap: 18px;
+    }
+
+    .layer {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .layer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .layer-header p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .count {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 5px 10px;
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      padding: 16px;
+    }
+
+    .card {
+      display: grid;
+      gap: 7px;
+      min-height: 118px;
+      border: 1px solid var(--line);
+      border-left-width: 5px;
+      border-radius: var(--radius);
+      background: #fff;
+      padding: 13px 14px;
+      transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(22, 32, 51, .11);
+    }
+
+    .card.api { border-left-color: var(--api); }
+    .card.app { border-left-color: var(--app); }
+    .card.domain { border-left-color: var(--domain); }
+    .card.infra { border-left-color: var(--infra); }
+    .card.test { border-left-color: var(--test); }
+
+    .file {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      font-family: "Cascadia Code", Consolas, monospace;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ink);
+      word-break: break-word;
+    }
+
+    .file::before {
+      content: "cs";
+      display: inline-grid;
+      place-items: center;
+      width: 24px;
+      height: 22px;
+      border-radius: 5px;
+      background: #eef2f8;
+      color: #43516a;
+      font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+      font-size: 10px;
+      font-weight: 800;
+      flex: 0 0 auto;
+    }
+
+    .desc {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .path {
+      align-self: end;
+      margin: 0;
+      color: #8a95a8;
+      font-family: "Cascadia Code", Consolas, monospace;
+      font-size: 11px;
+      word-break: break-word;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .empty {
+      display: none;
+      border: 1px dashed var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      padding: 22px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    @media (max-width: 1120px) {
+      .intro {
+        grid-template-columns: 1fr;
+      }
+
+      .cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .flow-row {
+        grid-template-columns: 1fr;
+      }
+
+      .flow-step:not(:last-child)::after {
+        top: auto;
+        right: auto;
+        left: 24px;
+        bottom: -13px;
+        width: 2px;
+        height: 13px;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .topbar {
+        align-items: stretch;
+        flex-direction: column;
+        padding: 16px;
+      }
+
+      .controls {
+        min-width: 0;
+      }
+
+      main {
+        padding: 18px 16px 40px;
+      }
+
+      .cards {
+        grid-template-columns: 1fr;
+        padding: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="topbar">
+      <div class="title-block">
+        <h1>Nomisma Kod Haritasi</h1>
+        <p>Katmanlara gore tum .cs dosyalari ve kisa gorevleri</p>
+      </div>
+      <div class="controls">
+        <input id="search" class="search" type="search" placeholder="Dosya, katman veya aciklama ara..." />
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="intro" aria-label="Proje ozeti">
+      <div class="flow">
+        <h2>Mimari Akis</h2>
+        <div class="flow-row">
+          <div class="flow-step"><strong>API</strong><span>HTTP endpoint, middleware, mevcut kullanici bilgisi.</span></div>
+          <div class="flow-step"><strong>Application</strong><span>Use case servisleri, DTO, validation, abstraction.</span></div>
+          <div class="flow-step"><strong>Domain</strong><span>Entity, enum ve kredi hesaplama kurallari.</span></div>
+          <div class="flow-step"><strong>Infrastructure</strong><span>EF Core, Identity, JWT, transaction ve entegrasyonlar.</span></div>
+          <div class="flow-step"><strong>Tests</strong><span>Token, hesaplama, mock servis ve odeme senaryolari.</span></div>
+        </div>
+      </div>
+
+      <div class="legend">
+        <h2>Renkler</h2>
+        <div class="legend-grid">
+          <div class="legend-item"><span class="dot api"></span> API katmani</div>
+          <div class="legend-item"><span class="dot app"></span> Application katmani</div>
+          <div class="legend-item"><span class="dot domain"></span> Domain katmani</div>
+          <div class="legend-item"><span class="dot infra"></span> Infrastructure katmani</div>
+          <div class="legend-item"><span class="dot test"></span> Test projesi</div>
+        </div>
+      </div>
+    </section>
+
+    <div id="empty" class="empty">Arama kriterine uyan dosya bulunamadi.</div>
+
+    <section class="map" id="map">
+      <article class="layer" data-layer="api">
+        <div class="layer-header">
+          <div>
+            <h2>API Katmani</h2>
+            <p>Request karsilama, controller akisi, middleware ve kullanici context'i.</p>
+          </div>
+          <span class="count">8 dosya</span>
+        </div>
+        <div class="cards">
+          <div class="card api" data-search="AuthController.cs API login endpoint IAuthService"><div class="file">AuthController.cs</div><p class="desc">Burada login endpoint'i bulunur; kullanicidan gelen login istegini IAuthService uzerinden isler.</p><p class="path">src/Nomisma.Api/Controllers</p></div>
+          <div class="card api" data-search="CustomersController.cs API musteri listeleme olusturma guncelleme silme ozet"><div class="file">CustomersController.cs</div><p class="desc">Burada musteri listeleme, olusturma, guncelleme, silme ve musteri ozet endpoint'leri bulunur.</p><p class="path">src/Nomisma.Api/Controllers</p></div>
+          <div class="card api" data-search="InstallmentsController.cs API taksit goruntuleme guncelleme"><div class="file">InstallmentsController.cs</div><p class="desc">Burada taksit goruntuleme ve taksit guncelleme endpoint'leri bulunur.</p><p class="path">src/Nomisma.Api/Controllers</p></div>
+          <div class="card api" data-search="LoansController.cs API kredi listeleme olusturma guncelleme taksitler"><div class="file">LoansController.cs</div><p class="desc">Burada kredi listeleme, olusturma, guncelleme ve krediye ait taksitleri getirme endpoint'leri bulunur.</p><p class="path">src/Nomisma.Api/Controllers</p></div>
+          <div class="card api" data-search="PaymentsController.cs API odeme listeleme detay yeni odeme"><div class="file">PaymentsController.cs</div><p class="desc">Burada odeme listeleme, odeme detayini gorme ve yeni odeme alma endpoint'leri bulunur.</p><p class="path">src/Nomisma.Api/Controllers</p></div>
+          <div class="card api" data-search="ExceptionHandlingMiddleware.cs API exception hata middleware validation 400"><div class="file">ExceptionHandlingMiddleware.cs</div><p class="desc">Burada uygulamada firlayan custom exception'lar yakalanir ve uygun HTTP status koduyla JSON response'a cevrilir.</p><p class="path">src/Nomisma.Api/Middleware</p></div>
+          <div class="card api" data-search="Program.cs API startup DI authentication authorization cors swagger middleware"><div class="file">Program.cs</div><p class="desc">Burada API uygulamasi baslatilir; controller, authentication, authorization, CORS, Swagger, middleware ve DI kayitlari yapilir.</p><p class="path">src/Nomisma.Api</p></div>
+          <div class="card api" data-search="CurrentUserService.cs API JWT claim mevcut kullanici rol customer"><div class="file">CurrentUserService.cs</div><p class="desc">Burada JWT token icindeki claim'lerden mevcut kullanicinin id, rol ve musteri bilgileri okunur.</p><p class="path">src/Nomisma.Api/Services</p></div>
+        </div>
+      </article>
+
+      <article class="layer" data-layer="application">
+        <div class="layer-header">
+          <div>
+            <h2>Application Katmani</h2>
+            <p>DTO, servis, validator, mapper, exception ve dis bagimlilik soyutlamalari.</p>
+          </div>
+          <span class="count">50 dosya</span>
+        </div>
+        <div class="cards">
+          <div class="card app" data-search="ICurrentUserService.cs application abstraction current user"><div class="file">ICurrentUserService.cs</div><p class="desc">Burada mevcut kullanici bilgisini Application katmanina soyut olarak sunan interface tanimlanir.</p><p class="path">src/Nomisma.Application/Abstractions/Auth</p></div>
+          <div class="card app" data-search="IJwtTokenService.cs application jwt token abstraction"><div class="file">IJwtTokenService.cs</div><p class="desc">Burada JWT token uretme isini soyutlayan interface tanimlanir.</p><p class="path">src/Nomisma.Application/Abstractions/Auth</p></div>
+          <div class="card app" data-search="IUserAccountService.cs application identity user account"><div class="file">IUserAccountService.cs</div><p class="desc">Burada musteri kullanici hesabi olusturma, email guncelleme ve kullanici pasiflestirme islemleri soyutlanir.</p><p class="path">src/Nomisma.Application/Abstractions/Auth</p></div>
+          <div class="card app" data-search="JwtUserInfoDto.cs application jwt user info dto"><div class="file">JwtUserInfoDto.cs</div><p class="desc">Burada JWT olusturulurken kullanilacak kullanici bilgileri tasinir.</p><p class="path">src/Nomisma.Application/Abstractions/Auth</p></div>
+          <div class="card app" data-search="ICreditScoreService.cs application credit score integration"><div class="file">ICreditScoreService.cs</div><p class="desc">Burada musterinin kredi skorunu getiren dis servis soyutlanir.</p><p class="path">src/Nomisma.Application/Abstractions/Integrations</p></div>
+          <div class="card app" data-search="IPaymentGateway.cs application payment gateway integration"><div class="file">IPaymentGateway.cs</div><p class="desc">Burada odeme gateway entegrasyonu soyutlanir.</p><p class="path">src/Nomisma.Application/Abstractions/Integrations</p></div>
+          <div class="card app" data-search="PaymentGatewayRequestDto.cs payment gateway request dto"><div class="file">PaymentGatewayRequestDto.cs</div><p class="desc">Burada odeme gateway'e gonderilecek odeme bilgileri tasinir.</p><p class="path">src/Nomisma.Application/Abstractions/Integrations</p></div>
+          <div class="card app" data-search="PaymentGatewayResultDto.cs payment gateway result dto"><div class="file">PaymentGatewayResultDto.cs</div><p class="desc">Burada odeme gateway'den donen basarili veya basarisiz sonuc bilgileri tasinir.</p><p class="path">src/Nomisma.Application/Abstractions/Integrations</p></div>
+          <div class="card app" data-search="INomismaDbContext.cs application dbcontext abstraction dbset savechanges"><div class="file">INomismaDbContext.cs</div><p class="desc">Burada Application katmaninin kullanacagi DbSet'ler ve SaveChanges soyutlanir.</p><p class="path">src/Nomisma.Application/Abstractions/Persistence</p></div>
+          <div class="card app" data-search="ITransactionManager.cs application transaction abstraction"><div class="file">ITransactionManager.cs</div><p class="desc">Burada transaction icinde islem calistirma davranisi soyutlanir.</p><p class="path">src/Nomisma.Application/Abstractions/Persistence</p></div>
+          <div class="card app" data-search="IAuthService.cs auth login service interface"><div class="file">IAuthService.cs</div><p class="desc">Burada login islemini temsil eden auth servis interface'i tanimlanir.</p><p class="path">src/Nomisma.Application/Auth</p></div>
+          <div class="card app" data-search="LoginRequestDto.cs auth email password dto"><div class="file">LoginRequestDto.cs</div><p class="desc">Burada login isteginde gelen email ve sifre bilgileri tasinir.</p><p class="path">src/Nomisma.Application/Auth</p></div>
+          <div class="card app" data-search="LoginRequestDtoValidator.cs fluentvalidation login email password"><div class="file">LoginRequestDtoValidator.cs</div><p class="desc">Burada login isteginin email ve sifre validation kurallari tanimlanir.</p><p class="path">src/Nomisma.Application/Auth</p></div>
+          <div class="card app" data-search="LoginResponseDto.cs auth token email customer roles"><div class="file">LoginResponseDto.cs</div><p class="desc">Burada login sonrasi donecek token, email, musteri id ve roller tasinir.</p><p class="path">src/Nomisma.Application/Auth</p></div>
+          <div class="card app" data-search="ConflictException.cs exception conflict"><div class="file">ConflictException.cs</div><p class="desc">Burada cakisma durumlari icin kullanilan custom exception tanimlanir.</p><p class="path">src/Nomisma.Application/Common/Exceptions</p></div>
+          <div class="card app" data-search="ForbiddenException.cs exception forbidden yetki"><div class="file">ForbiddenException.cs</div><p class="desc">Burada yetki yetersizligi durumlari icin kullanilan custom exception tanimlanir.</p><p class="path">src/Nomisma.Application/Common/Exceptions</p></div>
+          <div class="card app" data-search="NotFoundException.cs exception not found bulunamadi"><div class="file">NotFoundException.cs</div><p class="desc">Burada kayit bulunamadiginda kullanilan custom exception tanimlanir.</p><p class="path">src/Nomisma.Application/Common/Exceptions</p></div>
+          <div class="card app" data-search="UnauthorizedException.cs exception unauthorized auth"><div class="file">UnauthorizedException.cs</div><p class="desc">Burada kimlik dogrulama basarisiz oldugunda kullanilan custom exception tanimlanir.</p><p class="path">src/Nomisma.Application/Common/Exceptions</p></div>
+          <div class="card app" data-search="ValidationException.cs exception validation"><div class="file">ValidationException.cs</div><p class="desc">Burada validation hatalari icin kullanilan uygulama seviyesindeki custom exception tanimlanir.</p><p class="path">src/Nomisma.Application/Common/Exceptions</p></div>
+          <div class="card app" data-search="FluentValidationExtensions.cs validation extension validate throw"><div class="file">FluentValidationExtensions.cs</div><p class="desc">Burada FluentValidation sonuclari kontrol edilir ve hata varsa uygulamanin ValidationException tipine cevrilir.</p><p class="path">src/Nomisma.Application/Common/Validation</p></div>
+          <div class="card app" data-search="CreateCustomerRequestDto.cs customer create dto"><div class="file">CreateCustomerRequestDto.cs</div><p class="desc">Burada musteri olusturma isteginde gelen musteri ve sifre bilgileri tasinir.</p><p class="path">src/Nomisma.Application/Customers</p></div>
+          <div class="card app" data-search="CreateCustomerRequestDtoValidator.cs customer create validator"><div class="file">CreateCustomerRequestDtoValidator.cs</div><p class="desc">Burada musteri olusturma icin ad, soyad, email, kimlik, telefon, adres ve sifre kurallari tanimlanir.</p><p class="path">src/Nomisma.Application/Customers</p></div>
+          <div class="card app" data-search="CustomerMapper.cs customer mapper dto"><div class="file">CustomerMapper.cs</div><p class="desc">Burada Customer entity'si response DTO'larina donusturulur.</p><p class="path">src/Nomisma.Application/Customers</p></div>
+          <div class="card app" data-search="CustomerResponseDto.cs customer response dto"><div class="file">CustomerResponseDto.cs</div><p class="desc">Burada musteri detay response modeli tanimlanir.</p><p class="path">src/Nomisma.Application/Customers</p></div>
+          <div class="card app" data-search="CustomerService.cs customer service business rules"><div class="file">CustomerService.cs</div><p class="desc">Burada musteri listeleme, olusturma, guncelleme, silme ve ozet alma is kurallari yurutulur.</p><p class="path">src/Nomisma.Application/Customers</p></div>
+          <div class="card app" data-search="CustomerSummaryResponseDto.cs customer summary dto"><div class="file">CustomerSummaryResponseDto.cs</div><p class="desc">Burada musterinin kredi, taksit ve odeme ozet bilgileri tasinir.</p><p class="path">src/Nomisma.Application/Customers</p></div>
+          <div class="card app" data-search="ICustomerService.cs customer interface"><div class="file">ICustomerService.cs</div><p class="desc">Burada musteri islemlerinin servis interface'i tanimlanir.</p><p class="path">src/Nomisma.Application/Customers</p></div>
+          <div class="card app" data-search="UpdateCustomerRequestDto.cs customer update dto"><div class="file">UpdateCustomerRequestDto.cs</div><p class="desc">Burada musteri guncelleme isteginde gelen alanlar tasinir.</p><p class="path">src/Nomisma.Application/Customers</p></div>
+          <div class="card app" data-search="UpdateCustomerRequestDtoValidator.cs customer update validator"><div class="file">UpdateCustomerRequestDtoValidator.cs</div><p class="desc">Burada musteri guncelleme validation kurallari tanimlanir.</p><p class="path">src/Nomisma.Application/Customers</p></div>
+          <div class="card app" data-search="IInstallmentService.cs installment interface"><div class="file">IInstallmentService.cs</div><p class="desc">Burada taksit goruntuleme ve guncelleme islemlerinin servis interface'i tanimlanir.</p><p class="path">src/Nomisma.Application/Installments</p></div>
+          <div class="card app" data-search="InstallmentMapper.cs installment mapper"><div class="file">InstallmentMapper.cs</div><p class="desc">Burada Installment entity'si response DTO'ya donusturulur.</p><p class="path">src/Nomisma.Application/Installments</p></div>
+          <div class="card app" data-search="InstallmentResponseDto.cs installment response dto"><div class="file">InstallmentResponseDto.cs</div><p class="desc">Burada taksit detay response modeli tanimlanir.</p><p class="path">src/Nomisma.Application/Installments</p></div>
+          <div class="card app" data-search="InstallmentService.cs installment service access update"><div class="file">InstallmentService.cs</div><p class="desc">Burada taksit goruntuleme, guncelleme, erisim kontrolu ve odenmis taksit kisitlari uygulanir.</p><p class="path">src/Nomisma.Application/Installments</p></div>
+          <div class="card app" data-search="UpdateInstallmentRequestDto.cs installment update dto"><div class="file">UpdateInstallmentRequestDto.cs</div><p class="desc">Burada taksit guncelleme istegindeki tarih ve durum bilgileri tasinir.</p><p class="path">src/Nomisma.Application/Installments</p></div>
+          <div class="card app" data-search="UpdateInstallmentRequestDtoValidator.cs installment update validator"><div class="file">UpdateInstallmentRequestDtoValidator.cs</div><p class="desc">Burada taksit guncelleme icin tarih ve durum validation kurallari tanimlanir.</p><p class="path">src/Nomisma.Application/Installments</p></div>
+          <div class="card app" data-search="CreateLoanRequestDto.cs loan create dto"><div class="file">CreateLoanRequestDto.cs</div><p class="desc">Burada kredi olusturma istegindeki musteri, kredi tipi, tutar, kar orani, vade ve baslangic tarihi tasinir.</p><p class="path">src/Nomisma.Application/Loans</p></div>
+          <div class="card app" data-search="CreateLoanRequestDtoValidator.cs loan create validator"><div class="file">CreateLoanRequestDtoValidator.cs</div><p class="desc">Burada kredi olusturma validation kurallari tanimlanir.</p><p class="path">src/Nomisma.Application/Loans</p></div>
+          <div class="card app" data-search="ILoanService.cs loan interface"><div class="file">ILoanService.cs</div><p class="desc">Burada kredi islemlerinin servis interface'i tanimlanir.</p><p class="path">src/Nomisma.Application/Loans</p></div>
+          <div class="card app" data-search="LoanMapper.cs loan mapper"><div class="file">LoanMapper.cs</div><p class="desc">Burada Loan entity'si response DTO'ya donusturulur.</p><p class="path">src/Nomisma.Application/Loans</p></div>
+          <div class="card app" data-search="LoanResponseDto.cs loan response dto"><div class="file">LoanResponseDto.cs</div><p class="desc">Burada kredi detay response modeli tanimlanir.</p><p class="path">src/Nomisma.Application/Loans</p></div>
+          <div class="card app" data-search="LoanService.cs loan service credit score installment"><div class="file">LoanService.cs</div><p class="desc">Burada kredi listeleme, olusturma, guncelleme, kredi skoru kontrolu, taksit uretimi ve erisim kurallari yurutulur.</p><p class="path">src/Nomisma.Application/Loans</p></div>
+          <div class="card app" data-search="UpdateLoanRequestDto.cs loan update dto status"><div class="file">UpdateLoanRequestDto.cs</div><p class="desc">Burada kredi guncelleme isteginde gelen kredi durumu tasinir.</p><p class="path">src/Nomisma.Application/Loans</p></div>
+          <div class="card app" data-search="UpdateLoanRequestDtoValidator.cs loan update validator"><div class="file">UpdateLoanRequestDtoValidator.cs</div><p class="desc">Burada kredi guncelleme validation kurallari tanimlanir.</p><p class="path">src/Nomisma.Application/Loans</p></div>
+          <div class="card app" data-search="CreatePaymentRequestDto.cs payment create dto"><div class="file">CreatePaymentRequestDto.cs</div><p class="desc">Burada odeme olusturma isteginde gelen taksit, tutar ve kart bilgileri tasinir.</p><p class="path">src/Nomisma.Application/Payments</p></div>
+          <div class="card app" data-search="CreatePaymentRequestDtoValidator.cs payment create validator"><div class="file">CreatePaymentRequestDtoValidator.cs</div><p class="desc">Burada odeme olusturma validation kurallari tanimlanir.</p><p class="path">src/Nomisma.Application/Payments</p></div>
+          <div class="card app" data-search="IPaymentService.cs payment interface"><div class="file">IPaymentService.cs</div><p class="desc">Burada odeme islemlerinin servis interface'i tanimlanir.</p><p class="path">src/Nomisma.Application/Payments</p></div>
+          <div class="card app" data-search="PaymentMapper.cs payment mapper"><div class="file">PaymentMapper.cs</div><p class="desc">Burada Payment entity'si response DTO'ya donusturulur.</p><p class="path">src/Nomisma.Application/Payments</p></div>
+          <div class="card app" data-search="PaymentResponseDto.cs payment response dto"><div class="file">PaymentResponseDto.cs</div><p class="desc">Burada odeme detay response modeli tanimlanir.</p><p class="path">src/Nomisma.Application/Payments</p></div>
+          <div class="card app" data-search="PaymentService.cs payment service gateway transaction installment"><div class="file">PaymentService.cs</div><p class="desc">Burada odeme alma, gateway dogrulama, taksit odeme sirasi, transaction ve kredi kapatma kurallari uygulanir.</p><p class="path">src/Nomisma.Application/Payments</p></div>
+          <div class="card app" data-search="DependencyInjection.cs application services validators DI"><div class="file">DependencyInjection.cs</div><p class="desc">Burada Application katmanindaki servisler ve FluentValidation validatorlari DI container'a eklenir.</p><p class="path">src/Nomisma.Application</p></div>
+        </div>
+      </article>
+
+      <article class="layer" data-layer="domain">
+        <div class="layer-header">
+          <div>
+            <h2>Domain Katmani</h2>
+            <p>Saf is modeli: entity'ler, enum'lar ve kredi hesaplama davranisi.</p>
+          </div>
+          <span class="count">14 dosya</span>
+        </div>
+        <div class="cards">
+          <div class="card domain" data-search="Entity.cs domain base entity id dates"><div class="file">Entity.cs</div><p class="desc">Burada entity'lerin ortak id, olusturulma ve guncellenme alanlari tanimlanir.</p><p class="path">src/Nomisma.Domain/Common</p></div>
+          <div class="card domain" data-search="Customer.cs domain customer entity loan relation"><div class="file">Customer.cs</div><p class="desc">Burada musteri domain entity'si ve musteri-kredi iliskisi tanimlanir.</p><p class="path">src/Nomisma.Domain/Entities</p></div>
+          <div class="card domain" data-search="Installment.cs domain installment entity payment relation"><div class="file">Installment.cs</div><p class="desc">Burada kredi taksiti entity'si, odeme iliskisi ve taksit durumu tanimlanir.</p><p class="path">src/Nomisma.Domain/Entities</p></div>
+          <div class="card domain" data-search="Loan.cs domain loan entity installment customer"><div class="file">Loan.cs</div><p class="desc">Burada kredi entity'si, musteri iliskisi, tutar, vade, skor, durum ve taksit listesi tanimlanir.</p><p class="path">src/Nomisma.Domain/Entities</p></div>
+          <div class="card domain" data-search="Payment.cs domain payment entity gateway"><div class="file">Payment.cs</div><p class="desc">Burada odeme entity'si, taksit iliskisi, gateway sonucu ve odeme bilgileri tanimlanir.</p><p class="path">src/Nomisma.Domain/Entities</p></div>
+          <div class="card domain" data-search="GatewayStatus.cs enum gateway status"><div class="file">GatewayStatus.cs</div><p class="desc">Burada odeme gateway durumlari tanimlanir.</p><p class="path">src/Nomisma.Domain/Enums</p></div>
+          <div class="card domain" data-search="InstallmentStatus.cs enum installment status"><div class="file">InstallmentStatus.cs</div><p class="desc">Burada taksit durumlari tanimlanir.</p><p class="path">src/Nomisma.Domain/Enums</p></div>
+          <div class="card domain" data-search="LoanStatus.cs enum loan status"><div class="file">LoanStatus.cs</div><p class="desc">Burada kredi durumlari tanimlanir.</p><p class="path">src/Nomisma.Domain/Enums</p></div>
+          <div class="card domain" data-search="LoanType.cs enum loan type"><div class="file">LoanType.cs</div><p class="desc">Burada kredi turleri tanimlanir.</p><p class="path">src/Nomisma.Domain/Enums</p></div>
+          <div class="card domain" data-search="PaymentStatus.cs enum payment status"><div class="file">PaymentStatus.cs</div><p class="desc">Burada odeme durumlari tanimlanir.</p><p class="path">src/Nomisma.Domain/Enums</p></div>
+          <div class="card domain" data-search="UserRole.cs enum user role admin customer"><div class="file">UserRole.cs</div><p class="desc">Burada sistemdeki kullanici rolleri tanimlanir.</p><p class="path">src/Nomisma.Domain/Enums</p></div>
+          <div class="card domain" data-search="InstallmentScheduleItem.cs loan calculation installment schedule"><div class="file">InstallmentScheduleItem.cs</div><p class="desc">Burada kredi hesaplamasi sonucu olusan tek bir taksit satiri tasinir.</p><p class="path">src/Nomisma.Domain/Loans</p></div>
+          <div class="card domain" data-search="LoanCalculationResult.cs loan calculation result"><div class="file">LoanCalculationResult.cs</div><p class="desc">Burada toplam borc, toplam kar ve taksit plani sonucu tasinir.</p><p class="path">src/Nomisma.Domain/Loans</p></div>
+          <div class="card domain" data-search="LoanCalculator.cs loan calculator schedule profit debt"><div class="file">LoanCalculator.cs</div><p class="desc">Burada kredi tutari, kar orani ve vadeye gore toplam borc ve taksit plani hesaplanir.</p><p class="path">src/Nomisma.Domain/Loans</p></div>
+        </div>
+      </article>
+
+      <article class="layer" data-layer="infrastructure">
+        <div class="layer-header">
+          <div>
+            <h2>Infrastructure Katmani</h2>
+            <p>Database, Identity, JWT, transaction, seed ve dis servis implementasyonlari.</p>
+          </div>
+          <span class="count">20 dosya</span>
+        </div>
+        <div class="cards">
+          <div class="card infra" data-search="JwtOptions.cs infrastructure jwt options"><div class="file">JwtOptions.cs</div><p class="desc">Burada JWT ayarlari; issuer, audience, secret ve sure bilgileri tutulur.</p><p class="path">src/Nomisma.Infrastructure/Auth</p></div>
+          <div class="card infra" data-search="JwtTokenService.cs infrastructure jwt token service"><div class="file">JwtTokenService.cs</div><p class="desc">Burada kullanici bilgilerine gore JWT token uretilir.</p><p class="path">src/Nomisma.Infrastructure/Auth</p></div>
+          <div class="card infra" data-search="DependencyInjection.cs infrastructure DI dbcontext identity jwt"><div class="file">DependencyInjection.cs</div><p class="desc">Burada DbContext, Identity, JWT, auth servisi, transaction manager ve mock entegrasyonlar DI container'a eklenir.</p><p class="path">src/Nomisma.Infrastructure</p></div>
+          <div class="card infra" data-search="ApplicationUser.cs identity user customer id"><div class="file">ApplicationUser.cs</div><p class="desc">Burada ASP.NET Identity kullanicisi genisletilir ve kullaniciya opsiyonel CustomerId eklenir.</p><p class="path">src/Nomisma.Infrastructure/Identity</p></div>
+          <div class="card infra" data-search="IdentityAuthService.cs identity auth login usermanager roles jwt"><div class="file">IdentityAuthService.cs</div><p class="desc">Burada login islemi yapilir; kullanici bulunur, sifre kontrol edilir, roller alinir ve JWT uretilir.</p><p class="path">src/Nomisma.Infrastructure/Identity</p></div>
+          <div class="card infra" data-search="UserAccountService.cs identity account create update disable"><div class="file">UserAccountService.cs</div><p class="desc">Burada musteri icin Identity kullanici hesabi olusturma, email guncelleme ve kullaniciyi pasiflestirme islemleri yapilir.</p><p class="path">src/Nomisma.Infrastructure/Identity</p></div>
+          <div class="card infra" data-search="MockCreditScoreService.cs mock credit score"><div class="file">MockCreditScoreService.cs</div><p class="desc">Burada gercek dis servis yerine musteriye sahte kredi skoru ureten mock servis bulunur.</p><p class="path">src/Nomisma.Infrastructure/Integrations</p></div>
+          <div class="card infra" data-search="MockPaymentGateway.cs mock payment gateway"><div class="file">MockPaymentGateway.cs</div><p class="desc">Burada gercek odeme altyapisi yerine odeme sonucunu simule eden mock gateway bulunur.</p><p class="path">src/Nomisma.Infrastructure/Integrations</p></div>
+          <div class="card infra" data-search="CustomerConfiguration.cs EF Core customer configuration"><div class="file">CustomerConfiguration.cs</div><p class="desc">Burada Customer entity'sinin EF Core tablo, alan, index ve iliski ayarlari yapilir.</p><p class="path">src/Nomisma.Infrastructure/Persistence/Configurations</p></div>
+          <div class="card infra" data-search="InstallmentConfiguration.cs EF Core installment configuration"><div class="file">InstallmentConfiguration.cs</div><p class="desc">Burada Installment entity'sinin EF Core tablo, alan ve iliski ayarlari yapilir.</p><p class="path">src/Nomisma.Infrastructure/Persistence/Configurations</p></div>
+          <div class="card infra" data-search="LoanConfiguration.cs EF Core loan configuration"><div class="file">LoanConfiguration.cs</div><p class="desc">Burada Loan entity'sinin EF Core tablo, decimal alan ve iliski ayarlari yapilir.</p><p class="path">src/Nomisma.Infrastructure/Persistence/Configurations</p></div>
+          <div class="card infra" data-search="PaymentConfiguration.cs EF Core payment configuration"><div class="file">PaymentConfiguration.cs</div><p class="desc">Burada Payment entity'sinin EF Core tablo, decimal alan ve iliski ayarlari yapilir.</p><p class="path">src/Nomisma.Infrastructure/Persistence/Configurations</p></div>
+          <div class="card infra" data-search="EfTransactionManager.cs EF Core transaction commit rollback"><div class="file">EfTransactionManager.cs</div><p class="desc">Burada EF Core transaction baslatma, commit ve rollback yonetimi yapilir.</p><p class="path">src/Nomisma.Infrastructure/Persistence</p></div>
+          <div class="card infra" data-search="20260511234753_InitialCreate.cs migration initial create"><div class="file">20260511234753_InitialCreate.cs</div><p class="desc">Burada ilk migration ile database tablolarinin nasil olusturulacagi tanimlanir.</p><p class="path">src/Nomisma.Infrastructure/Persistence/Migrations</p></div>
+          <div class="card infra" data-search="20260511234753_InitialCreate.Designer.cs migration designer metadata"><div class="file">20260511234753_InitialCreate.Designer.cs</div><p class="desc">Burada migration'in EF Core tarafindan uretilen metadata bilgileri bulunur.</p><p class="path">src/Nomisma.Infrastructure/Persistence/Migrations</p></div>
+          <div class="card infra" data-search="NomismaDbContextModelSnapshot.cs EF Core model snapshot"><div class="file">NomismaDbContextModelSnapshot.cs</div><p class="desc">Burada EF Core'un mevcut model semasi snapshot olarak tutulur.</p><p class="path">src/Nomisma.Infrastructure/Persistence/Migrations</p></div>
+          <div class="card infra" data-search="NomismaDbContext.cs EF Core Identity DbContext DbSet"><div class="file">NomismaDbContext.cs</div><p class="desc">Burada Identity tablolari ve domain DbSet'leri ayni EF Core DbContext icinde tanimlanir.</p><p class="path">src/Nomisma.Infrastructure/Persistence</p></div>
+          <div class="card infra" data-search="NomismaDbContextFactory.cs design time migration dbcontext"><div class="file">NomismaDbContextFactory.cs</div><p class="desc">Burada design-time migration islemleri icin DbContext olusturma mantigi bulunur.</p><p class="path">src/Nomisma.Infrastructure/Persistence</p></div>
+          <div class="card infra" data-search="NomismaDbSeeder.cs seed admin customer role data"><div class="file">NomismaDbSeeder.cs</div><p class="desc">Burada baslangic admin, musteri, kullanici, rol ve ornek veri olusturma islemleri yapilir.</p><p class="path">src/Nomisma.Infrastructure/Persistence</p></div>
+          <div class="card infra" data-search="NomismaDbSeederExtensions.cs migration seed extension"><div class="file">NomismaDbSeederExtensions.cs</div><p class="desc">Burada uygulama gelistirme ortaminda migration ve seed islemini calistiran extension bulunur.</p><p class="path">src/Nomisma.Infrastructure/Persistence</p></div>
+        </div>
+      </article>
+
+      <article class="layer" data-layer="tests">
+        <div class="layer-header">
+          <div>
+            <h2>Test Projesi</h2>
+            <p>Domain ve servis davranislarini dogrulayan otomatik testler.</p>
+          </div>
+          <span class="count">5 dosya</span>
+        </div>
+        <div class="cards">
+          <div class="card test" data-search="GlobalUsings.cs tests global using"><div class="file">GlobalUsings.cs</div><p class="desc">Burada test projesinde ortak kullanilacak using tanimlari yapilir.</p><p class="path">tests/Nomisma.Tests</p></div>
+          <div class="card test" data-search="JwtTokenServiceTests.cs tests jwt claims roles"><div class="file">JwtTokenServiceTests.cs</div><p class="desc">Burada JWT token uretiminin claim ve rol bilgilerini dogru icerip icermedigi test edilir.</p><p class="path">tests/Nomisma.Tests</p></div>
+          <div class="card test" data-search="LoanCalculatorTests.cs tests loan calculator"><div class="file">LoanCalculatorTests.cs</div><p class="desc">Burada kredi hesaplama ve taksit plani uretme mantigi test edilir.</p><p class="path">tests/Nomisma.Tests</p></div>
+          <div class="card test" data-search="MockIntegrationTests.cs tests mock integrations"><div class="file">MockIntegrationTests.cs</div><p class="desc">Burada mock kredi skoru ve mock odeme gateway davranislari test edilir.</p><p class="path">tests/Nomisma.Tests</p></div>
+          <div class="card test" data-search="PaymentServiceTests.cs tests payment service validation flow"><div class="file">PaymentServiceTests.cs</div><p class="desc">Burada odeme servisindeki validation, taksit sirasi, odeme tutari ve odeme akisi test edilir.</p><p class="path">tests/Nomisma.Tests</p></div>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const search = document.querySelector("#search");
+    const cards = Array.from(document.querySelectorAll(".card"));
+    const layers = Array.from(document.querySelectorAll(".layer"));
+    const empty = document.querySelector("#empty");
+
+    function normalize(value) {
+      return value.toLocaleLowerCase("tr-TR").trim();
+    }
+
+    function applyFilter() {
+      const term = normalize(search.value);
+      let visibleCards = 0;
+
+      cards.forEach((card) => {
+        const text = normalize(card.dataset.search + " " + card.innerText);
+        const match = !term || text.includes(term);
+        card.classList.toggle("hidden", !match);
+        if (match) visibleCards += 1;
+      });
+
+      layers.forEach((layer) => {
+        const visibleInLayer = layer.querySelectorAll(".card:not(.hidden)").length;
+        layer.classList.toggle("hidden", visibleInLayer === 0);
+      });
+
+      empty.style.display = visibleCards === 0 ? "block" : "none";
+    }
+
+    search.addEventListener("input", applyFilter);
+  </script>
+</body>
+</html>

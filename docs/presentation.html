@@ -1,0 +1,1481 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nomisma — Teknik Sunum</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-light.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --sb:#eee8df;--bg:#faf8f5;--card:#ffffff;--bdr:#ddd6cb;
+  --acc:#b45309;--grn:#15803d;--org:#c2410c;--red:#dc2626;--pur:#6d28d9;
+  --t:#1c1a16;--ts:#6b6358;--tm:#b0a898;--code:#f5f0ea;--sw:264px;
+}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t);display:flex;height:100vh;overflow:hidden}
+
+/* ── SIDEBAR ── */
+.sidebar{width:var(--sw);min-width:var(--sw);background:var(--sb);border-right:1px solid var(--bdr);display:flex;flex-direction:column;height:100vh}
+.sb-head{padding:22px 20px 16px;border-bottom:1px solid var(--bdr);flex-shrink:0}
+.sb-logo{font-size:17px;font-weight:800;color:var(--acc);letter-spacing:-.3px}
+.sb-sub{font-size:10px;color:var(--ts);margin-top:3px;text-transform:uppercase;letter-spacing:.7px}
+.sb-nav{flex:1;overflow-y:auto;padding:8px 0 20px}
+.sb-nav::-webkit-scrollbar{width:3px}
+.sb-nav::-webkit-scrollbar-thumb{background:var(--bdr)}
+.ni{display:flex;align-items:center;gap:10px;padding:9px 18px;cursor:pointer;font-size:13px;color:var(--ts);transition:color .12s,background .12s;border-left:3px solid transparent;user-select:none}
+.ni:hover{color:var(--t);background:rgba(0,0,0,.04)}
+.ni.active{color:var(--acc);background:rgba(180,83,9,.08);border-left-color:var(--acc)}
+.ni-ic{font-size:13px;width:18px;text-align:center;flex-shrink:0}
+.ni-n{font-size:10px;color:var(--tm);margin-left:auto;font-family:'JetBrains Mono',monospace}
+hr.nd{margin:6px 18px;border:none;border-top:1px solid var(--bdr)}
+
+/* ── MAIN ── */
+.main{flex:1;height:100vh;overflow-y:auto;padding:44px 52px 60px}
+.main::-webkit-scrollbar{width:5px}
+.main::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:3px}
+
+/* ── SECTIONS ── */
+.sec{display:none}
+.sec.active{display:block;animation:fi .2s ease}
+@keyframes fi{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+.stag{font-size:10px;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:1.3px;margin-bottom:8px}
+.stitle{font-size:30px;font-weight:800;letter-spacing:-.5px;line-height:1.2;margin-bottom:12px}
+.sdesc{font-size:14.5px;color:var(--ts);line-height:1.75;max-width:680px;margin-bottom:36px}
+
+/* ── CARDS ── */
+.card{background:var(--card);border:1px solid var(--bdr);border-radius:10px;padding:22px 24px;margin-bottom:18px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.ct{font-size:13.5px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.card p,.card li{font-size:13.5px;color:var(--ts);line-height:1.75}
+.card p{margin-bottom:10px}
+.card p:last-child{margin-bottom:0}
+
+/* ── BADGES ── */
+.badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:100px;text-transform:uppercase;letter-spacing:.5px}
+.bb{background:rgba(59,130,246,.1);color:#1d4ed8}
+.bg{background:rgba(21,128,61,.1);color:#166534}
+.bo{background:rgba(194,65,12,.1);color:#9a3412}
+.br{background:rgba(220,38,38,.1);color:#991b1b}
+.bp{background:rgba(109,40,217,.1);color:#5b21b6}
+
+/* ── CODE ── */
+.cw{background:var(--code);border:1px solid var(--bdr);border-radius:8px;margin:14px 0;overflow:hidden}
+.ch{display:flex;align-items:center;justify-content:space-between;padding:9px 16px;background:rgba(0,0,0,.03);border-bottom:1px solid var(--bdr)}
+.cf{font-size:11.5px;color:#92400e;font-family:'JetBrains Mono',monospace}
+.cl{font-size:10px;color:var(--tm);text-transform:uppercase;letter-spacing:.5px}
+.cw pre{margin:0;padding:16px;overflow-x:auto;font-size:12.5px;line-height:1.65}
+.cw pre code{font-family:'JetBrains Mono',monospace!important;background:transparent!important}
+
+/* ── GRIDS ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:18px}
+
+/* ── CALLOUTS ── */
+.callout{border-radius:8px;padding:14px 18px;margin:14px 0;font-size:13.5px;line-height:1.65;display:flex;gap:12px;align-items:flex-start}
+.callout-ic{font-size:15px;margin-top:2px;flex-shrink:0}
+.callout p{margin:0;color:inherit}
+.callout strong{font-weight:600;display:block;margin-bottom:3px}
+.cb{background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.25);color:#1e40af}
+.cg{background:rgba(21,128,61,.07);border:1px solid rgba(21,128,61,.25);color:#14532d}
+.co{background:rgba(180,83,9,.08);border:1px solid rgba(180,83,9,.3);color:#78350f}
+.cr{background:rgba(220,38,38,.07);border:1px solid rgba(220,38,38,.25);color:#7f1d1d}
+
+/* ── FLOW ── */
+.flow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:14px 0}
+.fs{background:var(--code);border:1px solid var(--bdr);border-radius:6px;padding:6px 12px;font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--ts)}
+.fs.fh{border-color:#b45309;color:#92400e}
+.fs.fg{border-color:#15803d;color:#14532d}
+.fs.fr{border-color:#dc2626;color:#7f1d1d}
+.fa{color:var(--tm);font-size:13px}
+
+/* ── LAYERS ── */
+.layers{margin:20px 0}
+.layer{padding:14px 20px;border-radius:8px;margin-bottom:6px}
+.ln{font-size:13.5px;font-weight:700;margin-bottom:2px}
+.ld{font-size:11.5px;opacity:.65}
+.la{text-align:center;font-size:16px;color:var(--tm);margin-bottom:6px}
+.l-domain{background:rgba(109,40,217,.08);border:1px solid rgba(109,40,217,.22);color:#5b21b6}
+.l-app{background:rgba(29,78,216,.08);border:1px solid rgba(29,78,216,.22);color:#1e40af}
+.l-infra{background:rgba(21,128,61,.08);border:1px solid rgba(21,128,61,.22);color:#166534}
+.l-api{background:rgba(180,83,9,.08);border:1px solid rgba(180,83,9,.22);color:#92400e}
+
+/* ── TABLE ── */
+.tbl{width:100%;border-collapse:collapse;font-size:13px;margin:14px 0}
+.tbl th{text-align:left;padding:9px 14px;color:var(--ts);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px;background:rgba(0,0,0,.025);border-bottom:1px solid var(--bdr)}
+.tbl td{padding:11px 14px;border-bottom:1px solid rgba(0,0,0,.06);color:var(--ts);vertical-align:top}
+.tbl td:first-child{color:var(--t);font-weight:500;font-family:'JetBrains Mono',monospace;font-size:12px}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:rgba(0,0,0,.02)}
+
+/* ── SOLID ── */
+.sc{background:var(--card);border:1px solid var(--bdr);border-radius:10px;padding:20px 22px;position:relative;overflow:hidden}
+.sc::after{content:attr(data-l);position:absolute;right:14px;top:10px;font-size:52px;font-weight:900;opacity:.05;font-family:'Inter',sans-serif;line-height:1;color:var(--t)}
+.sl{font-size:26px;font-weight:900;line-height:1;margin-bottom:2px}
+.sn{font-size:11px;color:var(--ts);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px}
+.sc p{font-size:13px;color:var(--ts);line-height:1.65;margin-bottom:8px}
+
+/* ── BULLETS ── */
+.blist{list-style:none;margin:10px 0}
+.blist li{font-size:13.5px;color:var(--ts);padding:5px 0 5px 18px;position:relative;line-height:1.65}
+.blist li::before{content:'→';position:absolute;left:0;color:var(--acc);font-size:11px;top:7px}
+
+/* ── HIGHLIGHTS ── */
+.hl{color:var(--acc);font-weight:600}
+.hlg{color:#166534;font-weight:600}
+.hlo{color:#9a3412;font-weight:600}
+.hlr{color:#991b1b}
+.hlp{color:#5b21b6;font-weight:600}
+
+/* ── FILE TAG ── */
+.ftag{font-family:'JetBrains Mono',monospace;font-size:11px;color:#92400e;background:rgba(180,83,9,.07);padding:2px 7px;border-radius:4px;display:inline-block;border:1px solid rgba(180,83,9,.15)}
+.ic{font-family:'JetBrains Mono',monospace;font-size:12px;background:rgba(180,83,9,.07);color:#92400e;padding:1px 6px;border-radius:4px}
+
+/* ── FOOTER ── */
+.sfooter{margin-top:52px;padding-top:22px;border-top:1px solid var(--bdr);display:flex;justify-content:space-between;align-items:center}
+.nvbtn{display:flex;align-items:center;gap:8px;padding:9px 18px;border:1px solid var(--bdr);border-radius:8px;background:var(--card);color:var(--ts);font-size:13px;cursor:pointer;transition:border-color .15s,color .15s;font-family:'Inter',sans-serif;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.nvbtn:hover{border-color:var(--acc);color:var(--acc)}
+.nvbtn:disabled{opacity:.3;pointer-events:none}
+.pi{font-size:12px;color:var(--tm);font-family:'JetBrains Mono',monospace}
+hr.div{border:none;border-top:1px solid var(--bdr);margin:22px 0}
+
+/* ── NESTED ARCH ── */
+.arch-box{border-radius:10px;padding:18px 20px;margin-bottom:0}
+.arch-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px}
+.arch-desc{font-size:11.5px;opacity:.6;font-weight:400;margin-left:8px;text-transform:none;letter-spacing:0}
+.ab-api{background:rgba(180,83,9,.05);border:1px solid rgba(180,83,9,.18)}
+.ab-api .arch-label{color:#92400e}
+.ab-infra{background:rgba(21,128,61,.05);border:1px solid rgba(21,128,61,.18);margin-top:10px}
+.ab-infra .arch-label{color:#166534}
+.ab-app{background:rgba(29,78,216,.05);border:1px solid rgba(29,78,216,.18);margin-top:10px}
+.ab-app .arch-label{color:#1e40af}
+.ab-domain{background:rgba(109,40,217,.05);border:1px solid rgba(109,40,217,.18);margin-top:10px;text-align:center;padding:14px}
+.ab-domain .arch-label{color:#5b21b6;margin-bottom:0}
+
+/* ── TWO-COL COMPARE ── */
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}
+.cmp-bad{background:rgba(220,38,38,.04);border:1px solid rgba(220,38,38,.18);border-radius:8px;padding:14px 16px}
+.cmp-good{background:rgba(21,128,61,.04);border:1px solid rgba(21,128,61,.18);border-radius:8px;padding:14px 16px}
+.cmp-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px}
+.cmp-bad .cmp-lbl{color:#991b1b}
+.cmp-good .cmp-lbl{color:#166534}
+.cmp pre{font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--ts);line-height:1.6;white-space:pre-wrap}
+</style>
+</head>
+<body>
+
+<!-- ═══ SIDEBAR ═══ -->
+<nav class="sidebar">
+  <div class="sb-head">
+    <div class="sb-logo">Nomisma</div>
+    <div class="sb-sub">Junior Mülakat Sunumu</div>
+  </div>
+  <div class="sb-nav">
+    <div class="ni active" onclick="go(0)"><span class="ni-ic">🏠</span>Proje Tanıtımı<span class="ni-n">00</span></div>
+    <div class="ni" onclick="go(1)"><span class="ni-ic">🏛️</span>Clean Architecture<span class="ni-n">01</span></div>
+    <div class="ni" onclick="go(2)"><span class="ni-ic">🔷</span>SOLID Prensipleri<span class="ni-n">02</span></div>
+    <hr class="nd">
+    <div class="ni" onclick="go(3)"><span class="ni-ic">✅</span>Validation Mimarisi<span class="ni-n">03</span></div>
+    <div class="ni" onclick="go(4)"><span class="ni-ic">🔐</span>JWT &amp; Auth<span class="ni-n">04</span></div>
+    <div class="ni" onclick="go(5)"><span class="ni-ic">🛡️</span>Exception Middleware<span class="ni-n">05</span></div>
+    <hr class="nd">
+    <div class="ni" onclick="go(6)"><span class="ni-ic">🗃️</span>EF Core &amp; Migrations<span class="ni-n">06</span></div>
+    <div class="ni" onclick="go(7)"><span class="ni-ic">♻️</span>Service Lifetime<span class="ni-n">07</span></div>
+    <hr class="nd">
+    <div class="ni" onclick="go(8)"><span class="ni-ic">🧪</span>Test Stratejisi<span class="ni-n">08</span></div>
+    <div class="ni" onclick="go(9)"><span class="ni-ic">🗺️</span>Static Mapper<span class="ni-n">09</span></div>
+    <div class="ni" onclick="go(10)"><span class="ni-ic">📄</span>Swagger / OpenAPI<span class="ni-n">10</span></div>
+    <hr class="nd">
+    <div class="ni" onclick="go(11)"><span class="ni-ic">⚙️</span>.NET Prensipleri<span class="ni-n">11</span></div>
+    <div class="ni" onclick="go(12)"><span class="ni-ic">🚀</span>Ekstralar<span class="ni-n">12</span></div>
+  </div>
+</nav>
+
+<!-- ═══ MAIN ═══ -->
+<main class="main">
+
+<!-- ══ 00: Proje Tanıtımı ══ -->
+<div class="sec active" id="s0">
+  <div class="stag">Giriş — 00</div>
+  <h1 class="stitle">Nomisma Nedir?</h1>
+  <p class="sdesc">Fintech domain'inde kredi yönetimi yapan bir REST API. Müşteri kaydından başlayıp kredi skoru kontrolü, taksit planı üretimi ve ödeme gateway entegrasyonuna uzanan gerçek dünya senaryolarını kapsıyor. Sade CRUD değil — <span class="hl">iş kuralı</span>, <span class="hlo">rol tabanlı erişim</span> ve <span class="hlg">atomik işlem</span> gerektiren bir domain.</p>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ct">Domain Modeli <span class="badge bb">4 Entity</span></div>
+      <table class="tbl">
+        <thead><tr><th>Entity</th><th>Açıklama</th></tr></thead>
+        <tbody>
+          <tr><td>Customer</td><td>Soft-delete destekli müşteri kaydı. NationalId + Email unique.</td></tr>
+          <tr><td>Loan</td><td>Kredi bilgisi. PrincipalAmount, ProfitRate, TermMonths, Status.</td></tr>
+          <tr><td>Installment</td><td>Taksit planı. DueDate, Amount, Status (Unpaid/Overdue/Paid).</td></tr>
+          <tr><td>Payment</td><td>1:1 ile Installment. GatewayTransactionId, GatewayStatus.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="ct">Kullanıcı Rolleri <span class="badge bp">Role-based</span></div>
+      <table class="tbl">
+        <thead><tr><th>Eylem</th><th>Admin</th><th>Customer</th></tr></thead>
+        <tbody>
+          <tr><td>Müşteri listele</td><td>✅ Tümü</td><td>❌</td></tr>
+          <tr><td>Kredi oluştur</td><td>✅</td><td>❌</td></tr>
+          <tr><td>Kendi özetini gör</td><td>✅</td><td>✅ Sadece kendi</td></tr>
+          <tr><td>Ödeme yap</td><td>✅</td><td>✅ Sadece kendi</td></tr>
+          <tr><td>Müşteri sil</td><td>✅</td><td>❌</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ct">Tech Stack <span class="badge bg">Tercihler</span></div>
+    <table class="tbl">
+      <thead><tr><th>Katman</th><th>Teknoloji</th><th>Neden?</th></tr></thead>
+      <tbody>
+        <tr><td>.NET 8</td><td>ASP.NET Core Web API</td><td>LTS, minimal overhead, mükemmel DI desteği</td></tr>
+        <tr><td>ORM</td><td>EF Core 8 + SQL Server</td><td>Code-first migrations, LINQ, type safety</td></tr>
+        <tr><td>Auth</td><td>ASP.NET Identity + JWT</td><td>Hazır kullanıcı yönetimi + stateless token</td></tr>
+        <tr><td>Validation</td><td>FluentValidation 12</td><td>Kuralları sınıftan ayırır, bağımsız test edilir</td></tr>
+        <tr><td>Test</td><td>xUnit + InMemory EF</td><td>.NET ekosistemi standardı</td></tr>
+        <tr><td>Logging</td><td>Serilog</td><td>Structured logging, Console + genişletilebilir sink</td></tr>
+        <tr><td>Frontend</td><td>React + TypeScript + Tailwind</td><td>Tip güvenliği, hızlı prototipleme</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout cb">
+    <span class="callout-ic">💡</span>
+    <div><strong>Neden bu domain?</strong><p>Para hesabı (decimal precision), durum makinesi (LoanStatus), atomic işlem (payment), harici servis entegrasyonu (gateway, credit score) — bunlar mühendislik kararı gerektiren gerçek problemler. Sade CRUD bir portföyde anlamsız.</p></div>
+  </div>
+
+  <div class="sfooter">
+    <button class="nvbtn" disabled>← Önceki</button>
+    <span class="pi">1 / 13</span>
+    <button class="nvbtn" onclick="go(1)">Sonraki →</button>
+  </div>
+</div>
+
+<!-- ══ 01: Clean Architecture ══ -->
+<div class="sec" id="s1">
+  <div class="stag">Mimari — 01</div>
+  <h1 class="stitle">Clean Architecture</h1>
+  <p class="sdesc">Bağımlılık yönü <span class="hl">her zaman içeriye</span> doğru. Domain hiçbir dış katmanı bilmez. Bu kural sayesinde iş mantığını dış dünyadan tamamen izole edebiliyoruz.</p>
+
+  <div class="g2">
+    <div>
+      <div class="arch-box ab-api">
+        <div class="arch-label">Nomisma.Api <span class="arch-desc">— Controllers, Middleware, Program.cs</span></div>
+        <div class="arch-box ab-infra">
+          <div class="arch-label">Nomisma.Infrastructure <span class="arch-desc">— DbContext, Identity, JWT, Mock Servisler</span></div>
+          <div class="arch-box ab-app">
+            <div class="arch-label">Nomisma.Application <span class="arch-desc">— Services, DTOs, Validators, Exceptions</span></div>
+            <div class="arch-box ab-domain">
+              <div class="arch-label">Nomisma.Domain — Entities, Enums, LoanCalculator</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="ct">Bağımlılık Yönü</div>
+        <div class="layers">
+          <div class="layer l-domain"><div class="ln">Domain</div><div class="ld">Hiçbir proje referansı yok</div></div>
+          <div class="la">↑ depends on</div>
+          <div class="layer l-app"><div class="ln">Application</div><div class="ld">Sadece Domain</div></div>
+          <div class="la">↑ depends on</div>
+          <div class="layer l-infra"><div class="ln">Infrastructure</div><div class="ld">Domain + Application</div></div>
+          <div class="la">↑ depends on</div>
+          <div class="layer l-api"><div class="ln">Api</div><div class="ld">Domain + Application + Infrastructure</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ct">DependencyInjection Extension Pattern <span class="badge bb">Program.cs</span></div>
+    <p>Her katman kendi bağımlılıklarını kendi içinde yönetiyor. <span class="ic">Program.cs</span> bunların detayını bilmek zorunda değil — sadece iki satır çağırıyor:</p>
+    <div class="cw"><div class="ch"><span class="cf">Program.cs</span><span class="cl">C#</span></div><pre><code class="language-csharp" id="c-di-prog"></code></pre></div>
+    <p style="margin-top:14px">Yeni bir servis eklediğinde sadece ilgili katmanın <span class="ic">DependencyInjection.cs</span>'ini güncelliyorsun. <span class="ic">Program.cs</span>'e dokunmak gerekmiyor.</p>
+    <div class="cw"><div class="ch"><span class="cf">Application/DependencyInjection.cs</span><span class="cl">C#</span></div><pre><code class="language-csharp" id="c-di-app"></code></pre></div>
+  </div>
+
+  <div class="card">
+    <div class="ct">Somut Örnek: IPaymentGateway <span class="badge bg">Open/Closed</span></div>
+    <p>Interface <span class="ic">Application/Abstractions/Integrations/IPaymentGateway.cs</span>'de tanımlı. Implementasyon Infrastructure'da. <span class="ic">PaymentService</span> sadece interface'i biliyor:</p>
+    <div class="flow">
+      <div class="fs fh">IPaymentGateway (Application)</div>
+      <div class="fa">←implements</div>
+      <div class="fs fg">MockPaymentGateway (Infrastructure)</div>
+      <div class="fa">→ yarın:</div>
+      <div class="fs">IyzicoPaymentGateway</div>
+    </div>
+    <p>DI kaydını değiştirirsin, PaymentService'e tek satır dokunmazsın. Application katmanı değişmez.</p>
+  </div>
+
+  <div class="callout cg">
+    <span class="callout-ic">✅</span>
+    <div><strong>Neden önemli?</strong><p>SQL Server yerine PostgreSQL kullansak — sadece Infrastructure değişir. Authentication sistemi değişse — sadece Infrastructure değişir. Domain ve Application katmanı her senaryoda dokunulmaz kalır.</p></div>
+  </div>
+
+  <div class="sfooter">
+    <button class="nvbtn" onclick="go(0)">← Önceki</button>
+    <span class="pi">2 / 13</span>
+    <button class="nvbtn" onclick="go(2)">Sonraki →</button>
+  </div>
+</div>
+
+<!-- ══ 02: SOLID ══ -->
+<div class="sec" id="s2">
+  <div class="stag">Prensipler — 02</div>
+  <h1 class="stitle">SOLID Prensipleri</h1>
+  <p class="sdesc">Her prensip soyut bir kural değil — projede <span class="hl">somut bir kod kararına</span> dönüşmüş. Aşağıdaki her kart gerçek bir dosyaya işaret ediyor.</p>
+
+  <div class="g2">
+    <div class="sc" data-l="S">
+      <div class="sl" style="color:#60a5fa">S</div>
+      <div class="sn">Single Responsibility</div>
+      <p><span class="ftag">Domain/Loans/LoanCalculator.cs</span> sadece matematik yapar. Veritabanı bilmez, HTTP bilmez.</p>
+      <p><span class="ftag">Application/Loans/LoanService.cs</span> iş kurallarını yönetir. Validation → Kredi skoru → Calculator'ı çağır → Kaydet. Her görev ayrı yerde.</p>
+      <div class="cw"><div class="ch"><span class="cf">LoanService.cs — sorumluluk dağılımı</span></div><pre><code class="language-csharp" id="c-srp"></code></pre></div>
+    </div>
+    <div class="sc" data-l="O">
+      <div class="sl" style="color:#34d399">O</div>
+      <div class="sn">Open / Closed</div>
+      <p>Sistemi genişletmek için mevcut koda dokunmak gerekmez.</p>
+      <p><span class="ftag">ICreditScoreService</span> interface'i Application'da. <span class="ftag">MockCreditScoreService</span> Infrastructure'da. Yarın KKB entegrasyonu eklenecek:</p>
+      <div class="cw"><div class="ch"><span class="cf">Infrastructure/DependencyInjection.cs — tek satır değişir</span></div><pre><code class="language-csharp" id="c-ocp"></code></pre></div>
+      <p>Application katmanına tek satır dokunulmaz.</p>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="sc" data-l="L">
+      <div class="sl" style="color:#fbbf24">L</div>
+      <div class="sn">Liskov Substitution</div>
+      <p><span class="ic">ApplicationUser : IdentityUser&lt;Guid&gt;</span> — Identity'nin tüm altyapısı (UserManager, RoleManager) hâlâ çalışıyor. Sadece <span class="ic">CustomerId</span> eklendi, davranış bozulmadı.</p>
+      <p>Test sınıfındaki <span class="ic">TestCurrentUserService : ICurrentUserService</span> gerçek implementasyonla aynı kontratı karşılıyor, test ortamında sorunsuz yerine geçiyor.</p>
+      <div class="cw"><div class="ch"><span class="cf">PaymentServiceTests.cs — LSP'nin test edilebilirliğe katkısı</span></div><pre><code class="language-csharp" id="c-lsp"></code></pre></div>
+    </div>
+    <div class="sc" data-l="I">
+      <div class="sl" style="color:#a78bfa">I</div>
+      <div class="sn">Interface Segregation</div>
+      <p>Auth için tek büyük interface yerine üç küçük contract:</p>
+      <ul class="blist">
+        <li><span class="ic">ICurrentUserService</span> — token'dan kim olduğunu okur (API katmanı)</li>
+        <li><span class="ic">IJwtTokenService</span> — token üretir (Infrastructure)</li>
+        <li><span class="ic">IUserAccountService</span> — hesap yönetir (CustomerService)</li>
+      </ul>
+      <p><span class="ic">CustomerService</span> constructor'ına bak — <span class="ic">IUserAccountService</span> alıyor, <span class="ic">IJwtTokenService</span> almıyor. Müşteri servisinin token üretmekle işi yok.</p>
+      <div class="cw"><div class="ch"><span class="cf">CustomerService.cs — sadece gerekli bağımlılıklar</span></div><pre><code class="language-csharp" id="c-isp"></code></pre></div>
+    </div>
+  </div>
+
+  <div class="sc" data-l="D" style="margin-bottom:18px">
+    <div class="sl" style="color:#f87171">D</div>
+    <div class="sn">Dependency Inversion</div>
+    <p><span class="ftag">Application/Payments/PaymentService.cs</span> — beş bağımlılığın hepsi interface/abstraction. Hiçbiri concrete class değil. DI container runtime'da bağlar. Test ederken hepsini sahte implementasyonla değiştirebiliyoruz.</p>
+    <div class="cw"><div class="ch"><span class="cf">PaymentService.cs — constructor injection, tümü abstraction</span></div><pre><code class="language-csharp" id="c-dip"></code></pre></div>
+    <p><span class="hlo">Bağlantı noktası:</span> DIP olmasa PaymentService'i test etmek için gerçek bir SQL Server ve gerçek bir ödeme gateway'i gerekecekti. Interface'ler sayesinde her şey stub edilebilir.</p>
+  </div>
+
+  <div class="sfooter">
+    <button class="nvbtn" onclick="go(1)">← Önceki</button>
+    <span class="pi">3 / 13</span>
+    <button class="nvbtn" onclick="go(3)">Sonraki →</button>
+  </div>
+</div>
+
+<!-- ══ 03: Validation ══ -->
+<div class="sec" id="s3">
+  <div class="stag">Kalite — 03</div>
+  <h1 class="stitle">Validation Mimarisi</h1>
+  <p class="sdesc">Tek bir yerde validation yapmak yetmez. Nomisma'da <span class="hl">üç ayrı katmanda</span> farklı sorumlulukla validation uygulanıyor. Her katman bir öncekinin gözden kaçırdığını yakalıyor.</p>
+
+  <div class="g3">
+    <div class="card">
+      <div class="ct"><span class="badge bb">Tier 1</span> FluentValidation</div>
+      <p><strong style="color:var(--t)">Format &amp; Alan Kuralları</strong></p>
+      <p>Veritabanına gitmeden cevaplanabilen sorular: Alan boş mu? Email geçerli mi? Tutar pozitif mi? Kart tarihi geçmiş mi?</p>
+      <p><span class="ftag">Application/*/Validators/</span></p>
+    </div>
+    <div class="card">
+      <div class="ct"><span class="badge bg">Tier 2</span> Servis İçi</div>
+      <p><strong style="color:var(--t)">İş Kuralı Kontrolü</strong></p>
+      <p>Veritabanına gidilmesi gereken kontroller: Bu email daha önce kullanılmış mı? Müşteri var mı? Kredi skoru yeterli mi?</p>
+      <p><span class="ftag">Application/*/Services/</span></p>
+    </div>
+    <div class="card">
+      <div class="ct"><span class="badge bo">Tier 3</span> Domain Guard</div>
+      <p><strong style="color:var(--t)">Hesaplama Koruması</strong></p>
+      <p>LoanCalculator içindeki <span class="ic">ArgumentOutOfRangeException</span>. Domain hiçbir zaman geçersiz girdi almamalı — son savunma hattı.</p>
+      <p><span class="ftag">Domain/Loans/LoanCalculator.cs</span></p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ct">FluentValidation — Kart Validasyonu <span class="badge bo">Cascade Stop</span></div>
+    <p>Kart alanlarında <span class="ic">Cascade(CascadeMode.Stop)</span> ile ilk kural bozulursa sonrakini çalıştırma — kullanıcıya çelişkili hata mesajı gitmez:</p>
+    <div class="cw"><div class="ch"><span class="cf">Application/Payments/CreatePaymentRequestDtoValidator.cs</span><span class="cl">C#</span></div><pre><code class="language-csharp" id="c-val-payment"></code></pre></div>
+  </div>
+
+  <div class="card">
+    <div class="ct">FluentValidationExtensions — Köprü <span class="badge br">Custom Exception</span></div>
+    <p>FluentValidation'ın kendi <span class="ic">ValidationException</span>'ını değil, <span class="hlr">bizim</span> custom exception'ımızı fırlatıyor. Neden? Middleware yalnızca bizim hiyerarşimizi biliyor. FluentValidation exception'ı sızdıysa <span class="ic">500</span> dönerdi.</p>
+    <div class="cw"><div class="ch"><span class="cf">Application/Common/Validation/FluentValidationExtensions.cs</span><span class="cl">C#</span></div><pre><code class="language-csharp" id="c-val-ext"></code></pre></div>
+  </div>
+
+  <div class="card">
+    <div class="ct">Servis Katmanında İş Kuralı <span class="badge bg">Tier 2 Örnek</span></div>
+    <p>Kredi skoru ve soft-delete kontrolleri FluentValidation kuralı olamaz — veritabanına ve harici servise gitmek gerekiyor:</p>
+    <div class="cw"><div class="ch"><span class="cf">Application/Loans/LoanService.cs</span><span class="cl">C#</span></div><pre><code class="language-csharp" id="c-val-business"></code></pre></div>
+  </div>
+
+  <div class="card">
+    <div class="ct">Validation → Exception → Middleware Zinciri</div>
+    <div class="flow">
+      <div class="fs fh">FluentValidation kuralı bozuldu</div>
+      <div class="fa">→</div>
+      <div class="fs fh">ValidateAndThrowApplicationExceptionAsync</div>
+      <div class="fa">→</div>
+      <div class="fs fr">ValidationException fırlar</div>
+      <div class="fa">→</div>
+      <div class="fs fg">ExceptionMiddleware yakalar</div>
+      <div class="fa">→</div>
+      <div class="fs fg">HTTP 400 döner</div>
+    </div>
+    <p style="margin-top:4px">Controller'da tek satır try-catch yok. Temiz, tutarlı, merkezi.</p>
+  </div>
+
+  <div class="sfooter">
+    <button class="nvbtn" onclick="go(2)">← Önceki</button>
+    <span class="pi">4 / 13</span>
+    <button class="nvbtn" onclick="go(4)">Sonraki →</button>
+  </div>
+</div>
+
+<!-- ══ 04: JWT & Auth ══ -->
+<div class="sec" id="s4">
+  <div class="stag">Güvenlik — 04</div>
+  <h1 class="stitle">JWT &amp; Authentication</h1>
+  <p class="sdesc">Stateless API için JWT — her istek kendi kimliğini taşır. ASP.NET Identity kullanıcı yönetimini halleder, <span class="hl">custom <span class="ic">customer_id</span> claim</span> ise her servis çağrısında DB'ye gitmeden müşteri kimliğini verir.</p>
+
+  <div class="card">
+    <div class="ct">Login Akışı <span class="badge bb">IdentityAuthService</span></div>
+    <div class="flow">
+      <div class="fs fh">POST /api/auth/login</div>
+      <div class="fa">→</div>
+      <div class="fs">FluentValidation</div>
+      <div class="fa">→</div>
+      <div class="fs">UserManager.FindByEmail</div>
+      <div class="fa">→</div>
+      <div class="fs">CheckPasswordAsync</div>
+      <div class="fa">→</div>
+      <div class="fs">GetRolesAsync</div>
+      <div class="fa">→</div>
+      <div class="fs fg">JwtTokenService.CreateToken</div>
+      <div class="fa">→</div>
+      <div class="fs fg">LoginResponseDto</div>
+    </div>
+    <div class="cw"><div class="ch"><span class="cf">Infrastructure/Identity/IdentityAuthService.cs</span><span class="cl">C#</span></div><pre><code class="language-csharp" id="c-auth-login"></code></pre></div>
+  </div>
+
+  <div class="card">
+    <div class="ct">Token Üretimi — Claims Tasarımı <span class="badge bp">JwtTokenService</span></div>
+    <p>Standard claim'lere ek olarak <span class="ic">customer_id</span> custom claim'i ekleniyor. Bu claim sayesinde her servis çağrısında müşteri ID'si için veritabanına gitmek gerekmez:</p>
+    <div class="cw"><div class="ch"><span class="cf">Infrastructure/Auth/JwtTokenService.cs</span><span class="cl">C#</span></div><pre><code class="language-csharp" id="c-jwt-token"></code></pre></div>
+    <div class="callout co">
+      <span class="callout-ic">⚠️</span>
+      <div><strong>Guard clause</strong><p>Secret 32 karakterden kısaysa <span class="ic">InvalidOperationException</span>. Zayıf secret ile production'a açılmayı compile-time değil runtime'da engelleme — erken ve açık hata mesajı.</p></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ct">Token Okuma — CurrentUserService <span class="badge bb">Scoped</span></div>
+    <p>Her request'te JWT claim'lerinden kimlik bilgisini çeken servis. Scoped olduğu için bir kullanıcının claim'leri başka request'e sızmaz:</p>
+    <div class="cw"><div class="ch"><span class="cf">Api/Services/CurrentUserService.cs</span><span class="cl">C#</span></div><pre><code class="language-csharp" id="c-currentuser"></code></pre></div>
+  </div>
+
+  <div class="card">
+    <div class="ct">İki Katmanlı Yetkilendirme <span class="badge br">Defense in Depth</span></div>
+    <div class="cmp">
+      <div>
+        <div class="ct" style="margin-bottom:10px;font-size:12px;color:var(--ts)">Katman 1 — Controller (rol kontrolü)</div>
+        <div class="cw"><div class="ch"><span class="cf">LoansController.cs</span></div><pre><code class="language-csharp" id="c-auth-ctrl"></code></pre></div>
+      </div>
+      <div>
+        <div class="ct" style="margin-bottom:10px;font-size:12px;color:var(--ts)">Katman 2 — Service (sahiplik kontrolü)</div>
+        <div class="cw"><div class="ch"><span class="cf">LoanService.cs — EnsureCanAccess</span></div><pre><code class="language-csharp" id="c-auth-svc"></code></pre></div>
+      </div>
+    </div>
+    <p>Controller sadece "rol var mı?" diye sorar. Servis "doğru müşterinin datasına mı erişiyor?" diye sorar. Admin başka müşterinin datasını görebilir, customer sadece kendi datasını görür.</p>
+  </div>
+
+  <div class="card">
+    <div class="ct">Token Validation Parametreleri <span class="badge bb">Program.cs</span></div>
+    <div class="cw"><div class="ch"><span class="cf">Program.cs — TokenValidationParameters</span><span class="cl">C#</span></div><pre><code class="language-csharp" id="c-jwt-validate"></code></pre></div>
+    <p><span class="ic">ClockSkew = 1 dk</span> — sunucular arası saat farkına tolerans. Default 5 dakika, biz daha sıkı tuttuk. Token expire olmuş ama 1 dakika içindeyse kabul eder.</p>
+  </div>
+
+  <div class="sfooter">
+    <button class="nvbtn" onclick="go(3)">← Önceki</button>
+    <span class="pi">5 / 13</span>
+    <button class="nvbtn" onclick="go(5)">Sonraki →</button>
+  </div>
+</div>
+
+<!-- ══ 05: Exception Middleware ══ -->
+<div class="sec" id="s5">
+  <div class="stag">Altyapı — 05</div>
+  <h1 class="stitle">Global Exception Middleware</h1>
+  <p class="sdesc">Her controller'da try-catch yazmak kod tekrarı, tutarsız error format ve bakımı zor kod demek. <span class="hl">Tek bir merkezi noktada</span> tüm exception'lar yakalanıp HTTP'ye dönüştürülüyor.</p>
+
+  <div class="card">
+    <div class="ct">ExceptionHandlingMiddleware <span class="badge bb">C# Pattern Matching</span></div>
+    <p>Switch expression ile exception tipi → HTTP status code eşleştirmesi. Hem okunabilir hem exhaustive:</p>
+    <div class="cw"><div class="ch"><span class="cf">Api/Middleware/ExceptionHandlingMiddleware.cs</span><span class="cl">C#</span></div><pre><code class="language-csharp" id="c-middleware"></code></pre></div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ct">Exception → HTTP Status Map</div>
+      <table class="tbl">
+        <thead><tr><th>Exception</th><th>HTTP</th><th>Ne zaman?</th></tr></thead>
+        <tbody>
+          <tr><td>ValidationException</td><td>400</td><td>Format hatası, iş kuralı ihlali</td></tr>
+          <tr><td>UnauthorizedException</td><td>401</td><td>Yanlış email/şifre</td></tr>
+          <tr><td>NotFoundException</td><td>404</td><td>Kayıt bulunamadı</td></tr>
+          <tr><td>ForbiddenException</td><td>403</td><td>Yetki yok, başka müşteri</td></tr>
+          <tr><td>ConflictException</td><td>409</td><td>Aktif kredi olan müşteri silme</td></tr>
+          <tr><td>Exception (diğer)</td><td>500</td><td>Beklenmeyen hata</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="ct">Güvenlik Detayı <span class="badge br">500</span></div>
+      <p>Internal Server Error durumunda kullanıcıya sadece generic mesaj dönüyor:</p>
+      <p style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#fca5a5;background:var(--code);padding:10px;border-radius:6px;margin:8px 0">"Beklenmeyen bir hata olustu."</p>
+      <p>Gerçek exception mesajı ve stack trace <span class="hl">sadece loglanıyor</span>, asla client'a gitmiyor. SQL hataları, dosya yolları, iç yapı bilgisi expose edilmiyor.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ct">Middleware Pipeline Sırası <span class="badge bo">Kritik</span></div>
+    <div class="cw"><div class="ch"><span class="cf">Program.cs — middleware sırası</span><span class="cl">C#</span></div><pre><code class="language-csharp" id="c-pipeline"></code></pre></div>
+    <p>Exception middleware <span class="hl">en dışta</span> — authentication ve authorization'dan fırlayan hatalar da yakalanıyor. Sıra yanlış olsaydı <span class="ic">401/403</span>'ler middleware'e ulaşmadan geçebilirdi.</p>
+    <div class="flow" style="margin-top:14px">
+      <div class="fs fh">Request</div>
+      <div class="fa">→</div>
+      <div class="fs fh">ExceptionMiddleware</div>
+      <div class="fa">→</div>
+      <div class="fs">Auth</div>
+      <div class="fa">→</div>
+      <div class="fs">Controller</div>
+      <div class="fa">→</div>
+      <div class="fs">Service</div>
+      <div class="fa">→</div>
+      <div class="fs fr">Exception!</div>
+      <div class="fa">↩</div>
+      <div class="fs fg">HTTP Response</div>
+    </div>
+  </div>
+
+  <div class="sfooter">
+    <button class="nvbtn" onclick="go(4)">← Önceki</button>
+    <span class="pi">6 / 13</span>
+    <button class="nvbtn" onclick="go(6)">Sonraki →</button>
+  </div>
+</div>
+
+<!-- ══ 06: EF Core ══ -->
+<div class="sec" id="s6">
+  <div class="stag">Veri Katmanı — 06</div>
+  <h1 class="stitle">EF Core &amp; Migrations</h1>
+  <p class="sdesc">Code-first yaklaşım: entity sınıfları kaynak gerçek. Fluent Configuration ile Domain entity'leri temiz kalırken DB şeması hassas şekilde yönetiliyor.</p>
+
+  <div class="card">
+    <div class="ct">Fluent Configuration — Data Annotation Neden Değil? <span class="badge bp">Domain Clean</span></div>
+    <p>Data annotation'lar Domain entity'sine framework bağımlılığı sokar. Fluent config <span class="ic">Infrastructure</span>'da — domain tamamen bağımsız kalıyor:</p>
+    <div class="cw"><div class="ch"><span class="cf">Infrastructure/Persistence/Configurations/CustomerConfiguration.cs</span><span class="cl">C#</span></div><pre><code class="language-csharp" id="c-ef-customer"></code></pre></div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ct">Global Query Filter — Soft Delete <span class="badge bg">Otomatik</span></div>
+      <p>Bu tek satır:</p>
+      <div class="cw"><div class="ch"></div><pre><code class="language-csharp" id="c-ef-qf"></code></pre></div>
+      <p>sayesinde <span class="ic">_dbContext.Customers</span>'a yapılan <span class="hlg">her sorguda</span> otomatik <span class="ic">WHERE IsDeleted = 0</span> ekleniyor. Hiçbir servis bunu manuel yazmak zorunda değil.</p>
+      <p>Zincirleme filter — Loan için müşteri soft-delete kontrolü:</p>
+      <div class="cw"><div class="ch"><span class="cf">LoanConfiguration.cs</span></div><pre><code class="language-csharp" id="c-ef-loan-qf"></code></pre></div>
+      <p>Silinmiş müşterinin kredileri de otomatik gizleniyor.</p>
+    </div>
+    <div class="card">
+      <div class="ct">Enum → String &amp; Decimal Precision <span class="badge bo">Veri Güvenliği</span></div>
+      <p><strong style="color:var(--t)">Enum string olarak sakla:</strong></p>
+      <div class="cw"><div class="ch"><span class="cf">LoanConfiguration.cs</span></div><pre><code class="language-csharp" id="c-ef-enum"></code></pre></div>
+      <p>DB'de <span class="ic">"Active"</span>, <span class="ic">"Personal"</span> — okunabilir. Integer saklasaydık enum sırasını değiştirmek veri bozukluğuna yol açabilirdi.</p>
+      <p><strong style="color:var(--t)">Para için decimal(18,2):</strong></p>
+      <div class="cw"><div class="ch"></div><pre><code class="language-csharp" id="c-ef-decimal"></code></pre></div>
+      <p><span class="ic">float</span>/<span class="ic">double</span> değil — floating point hatası olmadan kuruş hassasiyeti.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ct">ApplyConfigurationsFromAssembly <span class="badge bb">Kayıt Serbest</span></div>
+    <div class="cw"><div class="ch"><span class="cf">NomismaDbContext.cs</span><span class="cl">C#</span></div><pre><code class="language-csharp" id="c-ef-ctx"></code></pre></div>
+    <p>Yeni bir entity configuration eklemek için sadece <span class="ic">IEntityTypeConfiguration&lt;T&gt;</span> implement etmek yeterli — DbContext'e tek satır ekleme gerekmez. Reflection ile assembly taranır, otomatik kaydedilir.</p>
+  </div>
+
+  <div class="card">
+    <div class="ct">IgnoreQueryFilters — Ne Zaman Kullanılır? <span class="badge br">İnce Karar</span></div>
+    <div class="cw"><div class="ch"><span class="cf">CustomerService.cs — GenerateCustomerNumberAsync</span><span class="cl">C#</span></div><pre><code class="language-csharp" id="c-ef-ignore"></code></pre></div>
+    <p>Müşteri numarası üretirken silinmiş müşteriler de sayılıyor — yoksa numara çakışması oluşabilir. Query filter bilinçli olarak devre dışı bırakılıyor.</p>
+  </div>
+
+  <div class="callout cg">
+    <span class="callout-ic">🔄</span>
+    <div><strong>Migration Stratejisi</strong><p>Dev ortamında uygulama ayağa kalktığında <span class="ic">MigrateAndSeedNomismaAsync()</span> otomatik çalışır. <span class="ic">Production'da</span> bu kod devre dışı — migration deployment pipeline'da explicit çalıştırılır. Bilinçli bir karar.</p></div>
+  </div>
+
+  <div class="sfooter">
+    <button class="nvbtn" onclick="go(5)">← Önceki</button>
+    <span class="pi">7 / 13</span>
+    <button class="nvbtn" onclick="go(7)">Sonraki →</button>
+  </div>
+</div>
+
+<!-- ══ 07: Service Lifetime ══ -->
+<div class="sec" id="s7">
+  <div class="stag">.NET DI — 07</div>
+  <h1 class="stitle">Service Lifetime</h1>
+  <p class="sdesc">DI container'da her servisin bir ömrü var. <span class="hl">Yanlış lifetime</span> seçmek sessiz bug'lara, bellek sızıntısına ve hatta güvenlik açıklarına yol açabilir.</p>
+
+  <div class="card">
+    <div class="ct">Lifetime Özeti</div>
+    <table class="tbl">
+      <thead><tr><th>Lifetime</th><th>Instance</th><th>Projede Kullanım</th></tr></thead>
+      <tbody>
+        <tr><td>Scoped</td><td>Her HTTP request'te bir tane</td><td>NomismaDbContext, CustomerService, LoanService, PaymentService, CurrentUserService, JwtTokenService</td></tr>
+        <tr><td>Transient</td><td>Her injection'da yeni</td><td>FluentValidation validator'ları (AddValidatorsFromAssembly default)</td></tr>
+        <tr><td>Singleton</td><td>Uygulama boyunca bir tane</td><td>IOptions&lt;JwtOptions&gt; (Configure&lt;T&gt;)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ct">Scoped DbContext — Neden Kritik? <span class="badge bb">Unit of Work</span></div>
+      <p>Bir HTTP isteği içinde <span class="ic">CustomerService</span>, <span class="ic">LoanService</span>, <span class="ic">PaymentService</span> — hepsi <span class="hlg">aynı DbContext instance'ını</span> paylaşıyor.</p>
+      <p>Bu Unit of Work pattern'in özü: aynı transaction içindeki tüm değişiklikler tek <span class="ic">SaveChangesAsync</span> ile commit ediliyor. Change tracking tutarlı çalışıyor.</p>
+      <div class="cw"><div class="ch"><span class="cf">Infrastructure/DependencyInjection.cs</span><span class="cl">C#</span></div><pre><code class="language-csharp" id="c-lt-scope"></code></pre></div>
+      <div class="callout cr">
+        <span class="callout-ic">⚠️</span>
+        <div><p>Transient DbContext kullansaydık: aynı request içinde iki servis farklı context'le çalışırdı, birinin gördüğü değişikliği diğeri görmezdi. Sessiz tutarsızlık.</p></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ct">CurrentUserService Scoped — Güvenlik <span class="badge br">Kritik</span></div>
+      <p><span class="ic">CurrentUserService</span> HTTP request'inin claim'lerini okuyor. <span class="hlg">Scoped</span> olduğu için her request'te taze bir instance oluşuyor.</p>
+      <div class="callout cr">
+        <span class="callout-ic">🚨</span>
+        <div><strong>Singleton olsaydı ne olurdu?</strong><p>İlk kullanıcının <span class="ic">UserId</span> ve <span class="ic">CustomerId</span>'si uygulama boyunca hafızada kalırdı. Sonraki her kullanıcı yanlış kimlikle işlem yapardı. Ciddi güvenlik açığı.</p></div>
+      </div>
+      <p style="margin-top:12px">Scoped kayıt zorunlu, ancak <span class="ic">IHttpContextAccessor</span> Singleton olduğu için çelişki yok. ASP.NET Core bunu doğru şekilde çözüyor.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ct">Transient Validator'lar — Neden Sorun Değil? <span class="badge bg">Lightweight</span></div>
+    <div class="cw"><div class="ch"><span class="cf">Application/DependencyInjection.cs</span><span class="cl">C#</span></div><pre><code class="language-csharp" id="c-lt-validators"></code></pre></div>
+    <p>FluentValidation validator'ları state tutmuyor — her çağrıda sadece kuralları çalıştırıp sonucu döndürüyorlar. Her injection'da yeni instance oluşturmak maliyetsiz. Scoped olmaları için özel bir neden yok.</p>
+  </div>
+
+  <div class="sfooter">
+    <button class="nvbtn" onclick="go(6)">← Önceki</button>
+    <span class="pi">8 / 13</span>
+    <button class="nvbtn" onclick="go(8)">Sonraki →</button>
+  </div>
+</div>
+
+<!-- ══ 08: Test ══ -->
+<div class="sec" id="s8">
+  <div class="stag">Kalite Güvencesi — 08</div>
+  <h1 class="stitle">Test Stratejisi</h1>
+  <p class="sdesc">Unit test hız için, integration test gerçek akışı doğrulamak için. Her test sınıfı farklı bir güven katmanı sağlıyor. <span class="hl">Toplam: 4 test sınıfı, 14+ test case.</span></p>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ct">LoanCalculatorTests <span class="badge bg">Pure Unit Test</span></div>
+      <p>Dış bağımlılık sıfır. Sadece domain logic test ediliyor. Hızlı, izole, deterministik:</p>
+      <div class="cw"><div class="ch"><span class="cf">tests/Nomisma.Tests/LoanCalculatorTests.cs</span><span class="cl">C#</span></div><pre><code class="language-csharp" id="c-test-calc"></code></pre></div>
+      <p>Yuvarlama testi kritik: 1000₺, %10 kâr, 3 taksit → ilk 2 taksit <span class="ic">366.67</span>, son taksit <span class="ic">366.66</span>. Toplam tam 1100 olmalı. <span class="ic">MidpointRounding.AwayFromZero</span> kararı bu test ile güvence altında.</p>
+    </div>
+    <div class="card">
+      <div class="ct">JwtTokenServiceTests <span class="badge bp">Unit Test</span></div>
+      <p>Token içinde doğru claim'lerin olduğunu doğruluyor. Bu claim'ler <span class="ic">CurrentUserService</span>'in temel dayanağı — yanlış olsa tüm authorization çöker:</p>
+      <div class="cw"><div class="ch"><span class="cf">tests/Nomisma.Tests/JwtTokenServiceTests.cs</span><span class="cl">C#</span></div><pre><code class="language-csharp" id="c-test-jwt"></code></pre></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ct">PaymentServiceTests <span class="badge bo">Integration Test — InMemory EF</span></div>
+    <p>Her test için yeni <span class="ic">Guid</span> ile InMemory DB — testler birbirinden izole. Gerçek <span class="ic">PaymentService</span> çalışıyor, stub gateway ve stub transaction manager:</p>
+    <div class="cw"><div class="ch"><span class="cf">PaymentServiceTests.cs — test senaryoları</span><span class="cl">C#</span></div><pre><code class="language-csharp" id="c-test-payment"></code></pre></div>
+    <table class="tbl" style="margin-top:14px">
+      <thead><tr><th>Test</th><th>Doğrulanan</th></tr></thead>
+      <tbody>
+        <tr><td>GatewaySuccess</td><td>Ödeme oluştu, taksit Paid oldu, Payment kaydı var</td></tr>
+        <tr><td>GatewayFailure</td><td>Ödeme oluşmadı, taksit Unpaid kaldı, DB temiz</td></tr>
+        <tr><td>PartialPayment</td><td>Taksit tutarından az/fazla → ValidationException</td></tr>
+        <tr><td>OrderEnforcement</td><td>Önceki taksit ödenmeden sonraki → ConflictException</td></tr>
+        <tr><td>CrossLoanOrder</td><td>Aynı müşterinin farklı kredisinde önceki taksit varken → ConflictException</td></tr>
+        <tr><td>LastInstallment</td><td>Son taksit ödendi → kredi otomatik Closed, ClosedAtUtc set</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="ct">Test Double'ları — DIP'in Test Edilebilirliğe Katkısı <span class="badge bb">Stub Pattern</span></div>
+    <p>Interface'ler sayesinde her bağımlılık test stub'ıyla değiştirilebiliyor:</p>
+    <div class="cw"><div class="ch"><span class="cf">PaymentServiceTests.cs — stub'lar</span><span class="cl">C#</span></div><pre><code class="language-csharp" id="c-test-stubs"></code></pre></div>
+    <div class="callout cb">
+      <span class="callout-ic">💡</span>
+      <div><p><span class="ic">InlineTransactionManager</span> özellikle önemli: InMemory DB transaction desteklemez. Bu abstraction olmadan PaymentService testleri yazılamazdı. DIP'in pratik faydası burada görünüyor.</p></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ct">MockIntegrationTests <span class="badge bg">Mock Servis Davranışı</span></div>
+    <div class="cw"><div class="ch"><span class="cf">tests/Nomisma.Tests/MockIntegrationTests.cs</span><span class="cl">C#</span></div><pre><code class="language-csharp" id="c-test-mock"></code></pre></div>
+    <p>MockCreditScoreService: <span class="ic">"risk"</span> içeren email veya sıfıra biten NationalId → skor 580 (kredi reddedilir). MockPaymentGateway: <span class="ic">4000000000000002</span> → decline.</p>
+  </div>
+
+  <div class="sfooter">
+    <button class="nvbtn" onclick="go(7)">← Önceki</button>
+    <span class="pi">9 / 13</span>
+    <button class="nvbtn" onclick="go(9)">Sonraki →</button>
+  </div>
+</div>
+
+<!-- ══ 09: Static Mapper ══ -->
+<div class="sec" id="s9">
+  <div class="stag">Tasarım Kararı — 09</div>
+  <h1 class="stitle">Static Mapper (AutoMapper Değil)</h1>
+  <p class="sdesc">AutoMapper yaygın bir kütüphane ama bu projede bilinçli olarak <span class="hl">static mapper metodlar</span> tercih edildi. Bu küçük görünen karar büyük farklar yaratıyor.</p>
+
+  <div class="cmp">
+    <div class="cmp-bad">
+      <div class="cmp-lbl">❌ AutoMapper ile (değil)</div>
+      <pre>// Mapping profile ayrı dosyada
+// Runtime'da çözülüyor
+// Yanlış mapping → null döner
+// Debug stack trace belirsiz
+// Ek NuGet bağımlılığı
+// Reflection overhead
+
+var dto = _mapper.Map&lt;CustomerResponseDto&gt;(customer);</pre>
+    </div>
+    <div class="cmp-good">
+      <div class="cmp-lbl">✅ Static Mapper ile (tercih edilen)</div>
+      <pre>// Kod tamamen görünür
+// Compile-time kontrol
+// Yanlış mapping → derleme hatası
+// Debug'da tam stack trace
+// Sıfır bağımlılık
+// Sıfır reflection
+
+var dto = CustomerMapper.ToDto(customer);</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ct">CustomerMapper Implementasyonu <span class="badge bg">Explicit</span></div>
+    <div class="cw"><div class="ch"><span class="cf">Application/Customers/CustomerMapper.cs</span><span class="cl">C#</span></div><pre><code class="language-csharp" id="c-mapper"></code></pre></div>
+    <p>Her property assignment açıkça görünüyor. Hangi alan nereye gittiği kod okuyarak anlaşılıyor — ayrı bir mapping konfigürasyonu aramak gerekmiyor.</p>
+  </div>
+
+  <div class="card">
+    <div class="ct">Neden Makul Bir Karar? <span class="badge bb">Trade-off</span></div>
+    <ul class="blist">
+      <li><strong style="color:var(--t)">Derleme zamanı güvenliği:</strong> Property ismi değişirse mapper'da derleme hatası alırsın — AutoMapper'da runtime null.</li>
+      <li><strong style="color:var(--t)">Debug edilebilirlik:</strong> Stack trace'de tam olarak hangi satırda ne çevrildiği görünüyor.</li>
+      <li><strong style="color:var(--t)">Sıfır bağımlılık:</strong> AutoMapper bir NuGet paketi — her versiyon güncellemesinde breaking change riski var.</li>
+      <li><strong style="color:var(--t)">Performans:</strong> Reflection yok, doğrudan property atama.</li>
+      <li><strong style="color:var(--t)">Sınırlı entity sayısı:</strong> 4 entity için tek tek yazmak makul. 40 entity olsaydı karar değişebilirdi.</li>
+    </ul>
+  </div>
+
+  <div class="sfooter">
+    <button class="nvbtn" onclick="go(8)">← Önceki</button>
+    <span class="pi">10 / 13</span>
+    <button class="nvbtn" onclick="go(10)">Sonraki →</button>
+  </div>
+</div>
+
+<!-- ══ 10: Swagger ══ -->
+<div class="sec" id="s10">
+  <div class="stag">API Dokümantasyonu — 10</div>
+  <h1 class="stitle">Swagger / OpenAPI</h1>
+  <p class="sdesc">Swashbuckle ile controller ve DTO'lardan <span class="hl">otomatik API dokümantasyonu</span>. Özellikle mock gateway ile birleşince geliştirme sürecinde çok değerliydi.</p>
+
+  <div class="card">
+    <div class="ct">Kurulum ve Pipeline <span class="badge bb">Dev Only</span></div>
+    <div class="cw"><div class="ch"><span class="cf">Program.cs — Swagger konfigürasyonu</span><span class="cl">C#</span></div><pre><code class="language-csharp" id="c-swagger"></code></pre></div>
+    <div class="callout co">
+      <span class="callout-ic">🔒</span>
+      <div><strong>Sadece Development</strong><p>Swagger UI production'da kapalı. <span class="ic">app.Environment.IsDevelopment()</span> guard'ı — production'da API şeması dışarıya expose edilmiyor.</p></div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ct">Şu An Neler Var</div>
+      <ul class="blist">
+        <li>Tüm endpoint'lerin otomatik listesi</li>
+        <li>DTO property'leri ve tipleri</li>
+        <li>HTTP method ve route bilgisi</li>
+        <li>Swagger UI üzerinden direkt istek gönderme</li>
+      </ul>
+      <p style="margin-top:8px">Mock gateway test kartlarıyla (<span class="ic">4111111111111111</span> → approve, <span class="ic">4000000000000002</span> → decline) Swagger üzerinden end-to-end test edildi.</p>
+    </div>
+    <div class="card">
+      <div class="ct">Eklenebilecekler <span class="badge bg">Gelecek</span></div>
+      <ul class="blist">
+        <li>JWT Bearer token UI entegrasyonu — Swagger'dan login yapıp token kullanma</li>
+        <li><span class="ic">[ProducesResponseType]</span> attribute'ları — response schema'ları</li>
+        <li>XML doc comment'leri — endpoint açıklamaları</li>
+        <li>Versiyonlama — <span class="ic">/api/v1/</span> ve <span class="ic">/api/v2/</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="sfooter">
+    <button class="nvbtn" onclick="go(9)">← Önceki</button>
+    <span class="pi">11 / 13</span>
+    <button class="nvbtn" onclick="go(11)">Sonraki →</button>
+  </div>
+</div>
+
+<!-- ══ 11: .NET Prensipleri ══ -->
+<div class="sec" id="s11">
+  <div class="stag">.NET Detayları — 11</div>
+  <h1 class="stitle">.NET Temel Prensipleri</h1>
+  <p class="sdesc">Büyük mimari kararların yanında <span class="hl">küçük ama önemli</span> detaylar da var. Bunlar genellikle code review'da fark yaratır.</p>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ct">CancellationToken — Her Yerde <span class="badge bb">Kaynak Yönetimi</span></div>
+      <p>Her async method son parametre olarak <span class="ic">CancellationToken cancellationToken</span> alıyor:</p>
+      <div class="cw"><div class="ch"><span class="cf">CustomerService.cs</span><span class="cl">C#</span></div><pre><code class="language-csharp" id="c-ct"></code></pre></div>
+      <p>Kullanıcı isteği iptal ederse (tab kapatma, timeout), DB query yarıda kesilir — sunucu kaynağı boşa harcanmaz. Uzun çalışan sorgularda belirgin performans farkı yaratır.</p>
+    </div>
+    <div class="card">
+      <div class="ct">AsNoTracking — Read-only Sorgularda <span class="badge bg">Performans</span></div>
+      <p>List ve Get operasyonlarında change tracking kapalı:</p>
+      <div class="cw"><div class="ch"><span class="cf">CustomerService.cs</span><span class="cl">C#</span></div><pre><code class="language-csharp" id="c-notrack"></code></pre></div>
+      <p>EF Core entity'nin kopyasını change tracker'da tutmuyor — bellek tasarrufu ve daha hızlı sorgu. Sadece güncelleme/silme yapacak sorgularda tracking gerekli.</p>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ct">sealed Class — Her Yerde <span class="badge bp">Kasıtlı Karar</span></div>
+      <p>Tüm servisler, validator'lar, DTO'lar, middleware, test sınıfları <span class="ic">sealed</span>:</p>
+      <div class="cw"><div class="ch"></div><pre><code class="language-csharp" id="c-sealed"></code></pre></div>
+      <p>Kalıtım için tasarlanmamış sınıfların açık bırakılması yanlışlıkla extend edilme riskine yol açar. <span class="ic">sealed</span> bu ihtimali compile-time'da kapatıyor. JIT ayrıca sealed sınıfları daha agresif optimize edebiliyor.</p>
+    </div>
+    <div class="card">
+      <div class="ct">String Normalizasyonu <span class="badge bo">Tutarsızlık Önleme</span></div>
+      <p>Email ve metin alanları her zaman trim + lowercase saklanıyor:</p>
+      <div class="cw"><div class="ch"><span class="cf">CustomerService.cs — CreateAsync</span><span class="cl">C#</span></div><pre><code class="language-csharp" id="c-normalize"></code></pre></div>
+      <p>"User@EXAMPLE.COM " ve "user@example.com" aynı müşteri. Normalizasyon yapılmazsa unique index bypass edilebilir ve login'de case-sensitivity sorunları çıkar.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ct">Serilog — Structured Logging <span class="badge bb">Gözlemlenebilirlik</span></div>
+    <div class="cw"><div class="ch"><span class="cf">Program.cs — Serilog konfigürasyonu</span><span class="cl">C#</span></div><pre><code class="language-csharp" id="c-serilog"></code></pre></div>
+    <p><span class="ic">UseSerilogRequestLogging()</span> — her HTTP isteği method, path, status code, elapsed ms ile loglanıyor. Üretimde Seq veya Elasticsearch'e yönlendirilebilir. Bootstrap logger ise app başlamadan önce bile hataları yakalar.</p>
+  </div>
+
+  <div class="sfooter">
+    <button class="nvbtn" onclick="go(10)">← Önceki</button>
+    <span class="pi">12 / 13</span>
+    <button class="nvbtn" onclick="go(12)">Sonraki →</button>
+  </div>
+</div>
+
+<!-- ══ 12: İleri Konular ══ -->
+<div class="sec" id="s12">
+  <div class="stag">Ekstralar — 12</div>
+  <h1 class="stitle">Ekstralar</h1>
+  <p class="sdesc">Mimarinin detaylarına inen, tasarım kararlarının arkasındaki gerekçeleri açıklayan konular.</p>
+
+  <div class="card">
+    <div class="ct">Transaction Atomicity — Serializable Isolation <span class="badge br">Race Condition</span></div>
+    <p>Ödeme işlemi birden fazla tablo etkiliyor: Payment oluştur + Installment güncelle + (son taksitse) Loan'ı Closed yap. Bunların hepsi atomik olmalı:</p>
+    <div class="cw"><div class="ch"><span class="cf">Application/Payments/PaymentService.cs</span><span class="cl">C#</span></div><pre><code class="language-csharp" id="c-adv-transaction"></code></pre></div>
+    <div class="callout cr">
+      <span class="callout-ic">🔒</span>
+      <div><strong>Neden Serializable?</strong><p>İki eşzamanlı istek aynı taksiti ödemeye çalışırsa — biri kazanır, diğeri serialization hatası alır. En güçlü isolation level. ReadCommitted kullansaydık double-payment riski olurdu.</p></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ct">Double-Check Pattern — Gateway Sonrası Tekrar Kontrol <span class="badge bo">Güvenlik</span></div>
+    <p>Gateway çağrısı sırasında (network gecikmesi!) başka bir request aynı taksiti ödemiş olabilir:</p>
+    <div class="cw"><div class="ch"><span class="cf">PaymentService.cs — double-check akışı</span><span class="cl">C#</span></div><pre><code class="language-csharp" id="c-adv-dcheck"></code></pre></div>
+    <p>İlk kontrol gateway'den önce (hızlı reddetme). İkinci kontrol transaction içinde tracked entity ile (serializable lock altında). İkisi birden gerekli.</p>
+  </div>
+
+  <div class="card">
+    <div class="ct">ITransactionManager Abstraction — Neden Var? <span class="badge bp">Testability</span></div>
+    <div class="cw"><div class="ch"><span class="cf">Application/Abstractions/Persistence/ITransactionManager.cs</span><span class="cl">C#</span></div><pre><code class="language-csharp" id="c-adv-txman"></code></pre></div>
+    <p>InMemory EF transaction desteklemez. Bu interface olmasaydı <span class="ic">PaymentServiceTests</span> yazılamazdı. <span class="ic">InlineTransactionManager</span> transaction açmadan operasyonu inline çalıştırıyor — test için mükemmel.</p>
+    <p style="margin-top:8px">Bu da DIP'in somut bir faydası: Production'da <span class="ic">EfTransactionManager</span>, test'te <span class="ic">InlineTransactionManager</span>. <span class="ic">PaymentService</span> farkı bilmiyor.</p>
+  </div>
+
+  <div class="card">
+    <div class="ct">Önceki Taksit Zorunluluğu — Cross-Loan <span class="badge bb">İş Kuralı</span></div>
+    <p>Aynı müşterinin farklı kredilerindeki taksitler de sıraya tabi:</p>
+    <div class="cw"><div class="ch"><span class="cf">PaymentService.cs — EnsureEarlierInstallmentsPaidAsync</span><span class="cl">C#</span></div><pre><code class="language-csharp" id="c-adv-order"></code></pre></div>
+    <p>Kredi A'nın Şubat taksiti ödenmemişken Kredi B'nin Mayıs taksiti ödenemez. İş kuralı sadece aynı kredi içinde değil, müşteri bazında uygulanıyor.</p>
+  </div>
+
+  <div class="card">
+    <div class="ct">Enum-Driven Policy <span class="badge bg">Type Safety</span></div>
+    <div class="cw"><div class="ch"><span class="cf">Program.cs — authorization policy</span><span class="cl">C#</span></div><pre><code class="language-csharp" id="c-adv-policy"></code></pre></div>
+    <p>String hardcode değil — <span class="ic">UserRole</span> enum'dan türetiliyor. Enum ismi değişirse policy adı da otomatik değişiyor. Tutarsızlık riski sıfır.</p>
+  </div>
+
+  <div class="card">
+    <div class="ct">Neler Eklenebilir? <span class="badge bg">Vizyon</span></div>
+    <table class="tbl">
+      <thead><tr><th>Konu</th><th>Neden Yapılmadı / Ne Eklenebilir?</th></tr></thead>
+      <tbody>
+        <tr><td>Refresh Token</td><td>JWT expire olunca tekrar login. Refresh token + rotation eklenebilir.</td></tr>
+        <tr><td>Rate Limiting</td><td>Login endpoint'e brute force koruması. .NET 7+'da built-in middleware mevcut.</td></tr>
+        <tr><td>CQRS</td><td>Şu an servisler read+write yapıyor. Büyüdükçe Query/Command ayrımı.</td></tr>
+        <tr><td>Audit Log</td><td>Kimin ne zaman ne değiştirdiği. EF Core interceptor ile eklenebilir.</td></tr>
+        <tr><td>Gerçek Gateway</td><td>Interface hazır. IyzicoPaymentGateway implementasyonu eklenince MockGateway devre dışı.</td></tr>
+        <tr><td>Health Checks</td><td>DB bağlantısı, dış servis erişimi — /health endpoint.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="sfooter">
+    <button class="nvbtn" onclick="go(11)">← Önceki</button>
+    <span class="pi">13 / 13</span>
+    <button class="nvbtn" disabled>Sonraki →</button>
+  </div>
+</div>
+
+</main>
+
+<script>
+// ── CODE SNIPPETS ──
+const C = {
+'di-prog': `builder.Services.AddApplication();
+builder.Services.AddInfrastructure(builder.Configuration);`,
+
+'di-app': `public static IServiceCollection AddApplication(this IServiceCollection services)
+{
+    services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
+    services.AddScoped<ICustomerService, CustomerService>();
+    services.AddScoped<ILoanService, LoanService>();
+    services.AddScoped<IInstallmentService, InstallmentService>();
+    services.AddScoped<IPaymentService, PaymentService>();
+    return services;
+}`,
+
+'srp': `// LoanService.CreateAsync — her görev ayrı sorumluluğa sahip
+await _createValidator.ValidateAndThrowApplicationExceptionAsync(request, ct);  // Tier 1
+
+var customer = await _dbContext.Customers.FirstOrDefaultAsync(...)               // Tier 2
+    ?? throw new NotFoundException("Musteri bulunamadi.");
+
+var creditScore = await _creditScoreService.GetScoreAsync(customer, ct);          // harici servis
+
+var calculation = _loanCalculator.Calculate(                                      // Domain logic
+    request.PrincipalAmount, request.ProfitRate, request.TermMonths, request.StartDate);
+
+_dbContext.Loans.Add(loan);
+await _dbContext.SaveChangesAsync(ct);                                            // kalıcılık`,
+
+'ocp': `// Önce:
+services.AddScoped<ICreditScoreService, MockCreditScoreService>();
+
+// Gerçek entegrasyon eklenince — tek satır değişir:
+services.AddScoped<ICreditScoreService, KkbCreditScoreService>();
+
+// Application ve Domain'e sıfır dokunuş.`,
+
+'lsp': `// Test sınıfında gerçek CurrentUserService yerine stub
+private sealed class TestCurrentUserService : ICurrentUserService
+{
+    public Guid? UserId    => Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+    public Guid? CustomerId => null;
+    public bool  IsAdmin    => true;
+    public bool  IsCustomer => false;
+}
+// ICurrentUserService kontratını tam olarak karşılıyor — LSP sağlanmış.`,
+
+'isp': `public CustomerService(
+    INomismaDbContext          dbContext,         // DB
+    IUserAccountService        userAccountService, // hesap yönetimi
+    ICurrentUserService        currentUser,        // kim bu kullanıcı?
+    IValidator<CreateCustomerRequestDto> createValidator,
+    IValidator<UpdateCustomerRequestDto> updateValidator)
+// IJwtTokenService YOK — müşteri servisinin token üretmekle işi yok.`,
+
+'dip': `public PaymentService(
+    INomismaDbContext                    dbContext,          // interface
+    ICurrentUserService                  currentUser,        // interface
+    IPaymentGateway                      paymentGateway,     // interface
+    ITransactionManager                  transactionManager, // interface
+    IValidator<CreatePaymentRequestDto>  createValidator)    // interface
+// Hiçbiri concrete class. DI container runtime'da bağlar.`,
+
+'val-payment': `RuleFor(request => request.CardHolderName)
+    .Cascade(CascadeMode.Stop)  // ilk kural bozulursa sonrakini çalıştırma
+    .NotEmpty()
+    .WithMessage("Kart bilgileri zorunludur.");
+
+RuleFor(request => request.ExpiryMonth)
+    .InclusiveBetween(1, 12)
+    .WithMessage("Kart son kullanma tarihi gecersiz.");
+
+RuleFor(request => request.ExpiryYear)
+    .GreaterThanOrEqualTo(_ => DateTime.UtcNow.Year)
+    .WithMessage("Kart son kullanma tarihi gecersiz.");`,
+
+'val-ext': `public static async Task ValidateAndThrowApplicationExceptionAsync<T>(
+    this IValidator<T> validator,
+    T instance,
+    CancellationToken cancellationToken)
+{
+    var result = await validator.ValidateAsync(instance, cancellationToken);
+    if (result.IsValid) return;
+
+    var message = string.Join(" ", result.Errors
+        .Select(e => e.ErrorMessage).Distinct());
+
+    throw new AppValidationException(message);  // BİZİM exception, FluentValidation'ın değil
+}`,
+
+'val-business': `// Tier 2: Veritabanına gidilmesi gereken iş kuralı
+var creditScore = await _creditScoreService.GetScoreAsync(customer, cancellationToken);
+if (creditScore < 650)
+    throw new AppValidationException($"Kredi skoru yetersiz. Skor: {creditScore}, minimum: 650.");
+
+// Tier 2: Soft-delete kontrolü
+if (customer.Loans.Any(loan => loan.Status == LoanStatus.Active))
+    throw new ConflictException("Aktif kredisi olan musteri silinemez.");`,
+
+'auth-login': `public async Task<LoginResponseDto> LoginAsync(LoginRequestDto request, CancellationToken ct)
+{
+    await _loginValidator.ValidateAndThrowApplicationExceptionAsync(request, ct);
+
+    var user = await _userManager.FindByEmailAsync(request.Email);
+    if (user is null || !await _userManager.CheckPasswordAsync(user, request.Password))
+        throw new UnauthorizedException("Email veya sifre hatali.");
+
+    var roles  = await _userManager.GetRolesAsync(user);
+    var token  = _jwtTokenService.CreateToken(new JwtUserInfoDto(
+        user.Id, user.Email ?? request.Email, user.CustomerId, roles.ToArray()));
+
+    return new LoginResponseDto(token, user.Email ?? request.Email, user.CustomerId, roles.ToArray());
+}`,
+
+'jwt-token': `var claims = new List<Claim>
+{
+    new(JwtRegisteredClaimNames.Sub,  user.UserId.ToString()),
+    new(ClaimTypes.NameIdentifier,    user.UserId.ToString()),
+    new(ClaimTypes.Email,             user.Email),
+    new(ClaimTypes.Name,              user.Email)
+};
+
+if (user.CustomerId.HasValue)
+    claims.Add(new Claim("customer_id", user.CustomerId.Value.ToString()));
+//                        ^^^^^^^^^^^^ custom claim — her sorguda DB'ye gitmeden müşteri ID'si
+
+claims.AddRange(user.Roles.Select(role => new Claim(ClaimTypes.Role, role)));
+
+var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.Secret));
+var credentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);`,
+
+'currentuser': `public sealed class CurrentUserService : ICurrentUserService
+{
+    private readonly IHttpContextAccessor _httpContextAccessor;
+
+    public Guid? UserId     => TryParseGuid(FindValue(ClaimTypes.NameIdentifier));
+    public Guid? CustomerId => TryParseGuid(FindValue("customer_id"));
+    public bool  IsAdmin    => IsInRole(UserRole.Admin.ToString());
+    public bool  IsCustomer => IsInRole(UserRole.Customer.ToString());
+
+    private bool   IsInRole(string role)  => _httpContextAccessor.HttpContext?.User.IsInRole(role) == true;
+    private string? FindValue(string type) => _httpContextAccessor.HttpContext?.User.FindFirstValue(type);
+}`,
+
+'auth-ctrl': `[HttpPost]
+[Authorize(Roles = "Admin")]  // Katman 1: Rol var mı?
+public async Task<IActionResult> Create([FromBody] CreateLoanRequestDto request, ...)`,
+
+'auth-svc': `private void EnsureCanAccess(Guid customerId)
+{
+    if (_currentUser.IsAdmin)   return;          // Admin her şeyi görebilir
+    if (_currentUser.IsCustomer
+     && _currentUser.CustomerId == customerId)   // Customer sadece kendini
+        return;
+
+    throw new ForbiddenException("Bu kayda erisim yetkiniz yok.");
+}`,
+
+'jwt-validate': `options.TokenValidationParameters = new TokenValidationParameters
+{
+    ValidateIssuer           = true,
+    ValidateAudience         = true,
+    ValidateIssuerSigningKey = true,
+    ValidateLifetime         = true,
+    ValidIssuer              = jwtOptions.Issuer,
+    ValidAudience            = jwtOptions.Audience,
+    IssuerSigningKey         = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Secret)),
+    ClockSkew                = TimeSpan.FromMinutes(1)  // default 5 dk — biz daha sıkı
+};`,
+
+'middleware': `public async Task InvokeAsync(HttpContext context)
+{
+    try   { await _next(context); }
+    catch (Exception exception) { await HandleAsync(context, exception); }
+}
+
+private async Task HandleAsync(HttpContext context, Exception exception)
+{
+    var (statusCode, message) = exception switch
+    {
+        ValidationException    => (HttpStatusCode.BadRequest,          exception.Message),
+        UnauthorizedException  => (HttpStatusCode.Unauthorized,        exception.Message),
+        NotFoundException      => (HttpStatusCode.NotFound,            exception.Message),
+        ConflictException      => (HttpStatusCode.Conflict,            exception.Message),
+        ForbiddenException     => (HttpStatusCode.Forbidden,           exception.Message),
+        _                      => (HttpStatusCode.InternalServerError, "Beklenmeyen bir hata olustu.")
+    };
+
+    if (statusCode == HttpStatusCode.InternalServerError)
+        _logger.LogError(exception, "Unhandled exception.");  // stack trace loglanır ama client'a gitmez
+
+    context.Response.StatusCode = (int)statusCode;
+    context.Response.ContentType = "application/json";
+    await context.Response.WriteAsJsonAsync(new { message });
+}`,
+
+'pipeline': `app.UseMiddleware<ExceptionHandlingMiddleware>();  // ← EN DIŞTA, tümünü sarar
+app.UseHttpsRedirection();
+app.UseSerilogRequestLogging();
+app.UseCors("Client");
+app.UseAuthentication();   // 401 fırlatabilir → middleware yakalar
+app.UseAuthorization();    // 403 fırlatabilir → middleware yakalar
+app.MapControllers();`,
+
+'ef-customer': `public void Configure(EntityTypeBuilder<Customer> builder)
+{
+    builder.HasQueryFilter(customer => !customer.IsDeleted);   // soft-delete filtresi
+
+    builder.Property(c => c.Email).HasMaxLength(256).IsRequired();
+    builder.Property(c => c.NationalId).HasMaxLength(20).IsRequired();
+
+    builder.HasIndex(c => c.NationalId).IsUnique();   // DB seviyesinde unique
+    builder.HasIndex(c => c.Email).IsUnique();
+
+    builder.Ignore(c => c.FullName);   // hesaplanan property, DB'de kolon yok
+
+    builder.HasMany(c => c.Loans)
+        .WithOne(l => l.Customer)
+        .HasForeignKey(l => l.CustomerId)
+        .OnDelete(DeleteBehavior.Restrict);   // silinince loan cascade silinmez
+}`,
+
+'ef-qf': `builder.HasQueryFilter(customer => !customer.IsDeleted);`,
+
+'ef-loan-qf': `// Loan için zincirleme: silinmiş müşterinin kredisi de otomatik gizlenir
+builder.HasQueryFilter(loan => loan.Customer != null && !loan.Customer.IsDeleted);`,
+
+'ef-enum': `builder.Property(loan => loan.Type).HasConversion<string>().HasMaxLength(32);
+builder.Property(loan => loan.Status).HasConversion<string>().HasMaxLength(32);
+// DB'de "Active", "Personal" — okunabilir string`,
+
+'ef-decimal': `builder.Property(loan => loan.PrincipalAmount).HasColumnType("decimal(18,2)");
+builder.Property(loan => loan.ProfitRate).HasColumnType("decimal(5,2)");
+// float/double değil — kuruş hassasiyeti, floating point hatası yok`,
+
+'ef-ctx': `protected override void OnModelCreating(ModelBuilder builder)
+{
+    base.OnModelCreating(builder);
+    builder.ApplyConfigurationsFromAssembly(typeof(NomismaDbContext).Assembly);
+    // Yeni entity config eklemek için DbContext'e dokunmak gerekmez
+}`,
+
+'ef-ignore': `var count = await _dbContext.Customers
+    .IgnoreQueryFilters()   // silinmiş müşteriler de sayılır
+    .CountAsync(cancellationToken);
+return $"CUST-{count + 1001:D4}";`,
+
+'lt-scope': `services.AddDbContext<NomismaDbContext>(options => options.UseSqlServer(connectionString));
+services.AddScoped<INomismaDbContext>(p => p.GetRequiredService<NomismaDbContext>());
+// Aynı request'te CustomerService + PaymentService → aynı DbContext instance`,
+
+'lt-validators': `// FluentValidation — transient (varsayılan)
+services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
+// State tutmuyorlar, her injection'da yeni instance maliyetsiz`,
+
+'test-calc': `[Fact]
+public void Calculate_InstallmentsSumToTotalDebt()
+{
+    var result = new LoanCalculator().Calculate(1000m, 10m, 3, new DateOnly(2026, 1, 1));
+
+    Assert.Equal(result.TotalDebt, result.Installments.Sum(item => item.Amount));
+    Assert.Equal(366.67m, result.Installments[0].Amount);  // ilk iki taksit
+    Assert.Equal(366.66m, result.Installments[2].Amount);  // son taksit farkı absorbe eder
+}
+
+[Fact]
+public void Calculate_RejectsInvalidPrincipal()
+{
+    Assert.Throws<ArgumentOutOfRangeException>(() =>
+        new LoanCalculator().Calculate(0m, 10m, 12, new DateOnly(2026, 1, 1)));
+}`,
+
+'test-jwt': `[Fact]
+public void CreateToken_IncludesRoleAndCustomerClaims()
+{
+    var customerId = Guid.NewGuid();
+    var token = service.CreateToken(new JwtUserInfoDto(
+        Guid.NewGuid(), "customer@nomisma.local", customerId, new[] { "Customer" }));
+
+    var jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
+    Assert.Contains(jwt.Claims, c => c.Type == "customer_id" && c.Value == customerId.ToString());
+    Assert.Contains(jwt.Claims, c => c.Type.EndsWith("/role") && c.Value == "Customer");
+}`,
+
+'test-payment': `// Her test yeni bir InMemory DB — izole
+private static NomismaDbContext CreateDbContext() =>
+    new(new DbContextOptionsBuilder<NomismaDbContext>()
+        .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+
+[Fact]
+public async Task CreateAsync_LastInstallmentPayment_ClosesLoan()
+{
+    await using var db = CreateDbContext();
+    var installment = await SeedLoanAsync(db, installmentCount: 1);
+    var service = CreateService(db, PaymentGatewayResultFactory.Approved("TX-1"));
+
+    await service.CreateAsync(CreateRequest(installment.Id, installment.Amount), CancellationToken.None);
+
+    var loan = await db.Loans.FirstAsync();
+    Assert.Equal(LoanStatus.Closed, loan.Status);
+    Assert.NotNull(loan.ClosedAtUtc);  // otomatik kapatma
+}`,
+
+'test-stubs': `// IPaymentGateway stub — gateway'i simüle eder
+private sealed class TestPaymentGateway : IPaymentGateway
+{
+    private readonly PaymentGatewayResultDto _result;
+    public Task<PaymentGatewayResultDto> AuthorizeAsync(PaymentGatewayRequestDto request, CancellationToken ct)
+        => Task.FromResult(_result);
+}
+
+// ITransactionManager stub — InMemory EF transaction desteklemediği için
+private sealed class InlineTransactionManager : ITransactionManager
+{
+    public Task<T> ExecuteAsync<T>(Func<Task<T>> operation, CancellationToken ct,
+        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
+        => operation();   // transaction açmadan inline çalıştır
+}`,
+
+'test-mock': `[Fact]
+public async Task MockCreditScore_ReturnsLowScoreForRiskProfile()
+{
+    var customer = new Customer { Email = "risk.customer@nomisma.local", NationalId = "10000000001" };
+    var score = await new MockCreditScoreService().GetScoreAsync(customer, CancellationToken.None);
+    Assert.Equal(580, score);  // 650 altı → kredi reddedilir
+}
+
+[Fact]
+public async Task MockPaymentGateway_DeclinesFailureCard()
+{
+    var result = await new MockPaymentGateway().AuthorizeAsync(
+        new(Guid.NewGuid(), 100m, "Test", "4000000000000002", "123", 12, 2030), CancellationToken.None);
+    Assert.False(result.Succeeded);
+    Assert.Equal(GatewayStatus.Declined, result.Status);
+}`,
+
+'mapper': `public static class CustomerMapper
+{
+    public static CustomerResponseDto ToDto(Customer customer) => new(
+        customer.Id,
+        customer.CustomerNumber,
+        customer.FirstName,
+        customer.LastName,
+        customer.NationalId,
+        customer.Email,
+        customer.PhoneNumber,
+        customer.Address,
+        customer.DateOfBirth,
+        customer.CreatedAtUtc);
+
+    // Property yanlış yazılırsa → derleme hatası. AutoMapper'da runtime null döner.
+}`,
+
+'swagger': `builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+// ...
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+    // Production'da bu blok çalışmaz — API şeması expose edilmez
+}`,
+
+'ct': `public async Task<IReadOnlyList<CustomerResponseDto>> ListAsync(CancellationToken cancellationToken)
+{
+    var customers = await _dbContext.Customers
+        .AsNoTracking()
+        .OrderBy(c => c.CustomerNumber)
+        .ToListAsync(cancellationToken);  // ← iptal sinyali DB'ye iletilir
+    return customers.Select(CustomerMapper.ToDto).ToList();
+}`,
+
+'notrack': `// List/Get — sadece okuma, güncelleme yok → AsNoTracking
+var customers = await _dbContext.Customers.AsNoTracking()...ToListAsync(ct);
+
+// Update — tracking gerekli, entity değişikliği izleniyor
+var customer = await _dbContext.Customers.FirstOrDefaultAsync(item => item.Id == id, ct);
+customer.Email = request.Email;
+await _dbContext.SaveChangesAsync(ct);`,
+
+'sealed': `public sealed class CustomerService : ICustomerService { ... }
+public sealed class CreateCustomerRequestDtoValidator : AbstractValidator<CreateCustomerRequestDto> { ... }
+public sealed class ExceptionHandlingMiddleware { ... }
+public sealed class JwtTokenService : IJwtTokenService { ... }
+// Kalıtım için tasarlanmamış → sealed. JIT daha agresif optimize edebilir.`,
+
+'normalize': `customer.Email = request.Email.Trim().ToLowerInvariant();
+// "User@EXAMPLE.COM " → "user@example.com"
+// Unique index bypass riski yok, login'de case sorun yok`,
+
+'serilog': `builder.Host.UseSerilog((context, services, configuration) => configuration
+    .ReadFrom.Configuration(context.Configuration)
+    .ReadFrom.Services(services)
+    .Enrich.FromLogContext());
+
+// ...
+app.UseSerilogRequestLogging();
+// Her istek: method, path, status code, elapsed ms — structured log`,
+
+'adv-transaction': `return await _transactionManager.ExecuteAsync(async () =>
+{
+    // 1. Taksiti tekrar yükle (tracked) — transaction içinde lock
+    var trackedInstallment = await _dbContext.Installments
+        .Include(i => i.Payment).Include(i => i.Loan).ThenInclude(l => l!.Installments)
+        .FirstOrDefaultAsync(i => i.Id == request.InstallmentId, ct)!;
+
+    EnsureInstallmentPayable(trackedInstallment, request.Amount);   // double-check
+    await EnsureEarlierInstallmentsPaidAsync(trackedInstallment, ct);
+
+    // 2. Payment oluştur, Installment güncelle, gerekirse Loan kapat
+    _dbContext.Payments.Add(payment);
+    trackedInstallment.Status = InstallmentStatus.Paid;
+    if (loan.Installments.All(i => i.Status == InstallmentStatus.Paid))
+        loan.Status = LoanStatus.Closed;
+
+    await _dbContext.SaveChangesAsync(ct);
+    return PaymentMapper.ToDto(payment, trackedInstallment, loan);
+
+}, cancellationToken, IsolationLevel.Serializable);`,
+
+'adv-dcheck': `// GATEWAY'DEN ÖNCE — hızlı reddetme (transaction yok)
+EnsureInstallmentPayable(installment, request.Amount);
+await EnsureEarlierInstallmentsPaidAsync(installment, cancellationToken);
+
+// GATEWAY ÇAĞRISI — network gecikmesi burada (50-500ms)
+var gatewayResult = await _paymentGateway.AuthorizeAsync(request, cancellationToken);
+
+if (!gatewayResult.Succeeded)
+    throw new ConflictException(gatewayResult.FailureReason ?? "Gateway reddetti.");
+
+// TRANSACTION İÇİNDE — serializable lock altında tekrar kontrol
+// Gateway sırasında başka request aynı taksiti ödemiş olabilir!
+return await _transactionManager.ExecuteAsync(async () =>
+{
+    EnsureInstallmentPayable(trackedInstallment, request.Amount);   // 2. kontrol
+    ...
+}, ct, IsolationLevel.Serializable);`,
+
+'adv-txman': `public interface ITransactionManager
+{
+    Task<T> ExecuteAsync<T>(
+        Func<Task<T>> operation,
+        CancellationToken cancellationToken,
+        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted);
+}
+// EfTransactionManager → gerçek SQL transaction
+// InlineTransactionManager → test stub, transaction açmadan inline çalıştırır`,
+
+'adv-order': `private async Task EnsureEarlierInstallmentsPaidAsync(Installment installment, CancellationToken ct)
+{
+    var hasUnpaid = await _dbContext.Installments.AnyAsync(item =>
+        item.Id != installment.Id
+        && item.Loan != null
+        && item.Loan.CustomerId == customerId         // aynı müşteri
+        && (item.DueDate < installment.DueDate        // daha erken vadeli
+            || (item.LoanId == installment.LoanId
+                && item.InstallmentNumber < installment.InstallmentNumber))
+        && item.Status != InstallmentStatus.Paid,
+        ct);
+
+    if (hasUnpaid)
+        throw new ConflictException("Daha erken vadeli taksitler odenmeden sonraki odenemez.");
+}`,
+
+'adv-policy': `builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(UserRole.Admin.ToString(),
+        policy => policy.RequireRole(UserRole.Admin.ToString()));
+
+    options.AddPolicy(UserRole.Customer.ToString(),
+        policy => policy.RequireRole(UserRole.Customer.ToString()));
+});
+// String hardcode değil — enum'dan türetiliyor.`
+};
+
+// ── INJECT CODE SNIPPETS ──
+document.querySelectorAll('code[id]').forEach(el => {
+    const key = el.id.replace('c-', '');
+    if (C[key]) {
+        el.textContent = C[key];
+        hljs.highlightElement(el);
+    }
+});
+
+// ── NAVIGATION ──
+const sections = document.querySelectorAll('.sec');
+const navItems = document.querySelectorAll('.ni');
+let current = 0;
+
+function go(index) {
+    if (index < 0 || index >= sections.length) return;
+    sections[current].classList.remove('active');
+    navItems[current].classList.remove('active');
+    current = index;
+    sections[current].classList.add('active');
+    navItems[current].classList.add('active');
+    document.querySelector('.main').scrollTo({ top: 0, behavior: 'instant' });
+}
+</script>
+</body>
+</html>

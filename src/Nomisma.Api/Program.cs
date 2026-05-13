@@ -10,79 +10,103 @@ using Nomisma.Domain.Enums;
 using Nomisma.Infrastructure.Auth;
 using Nomisma.Infrastructure.Persistence;
 using Nomisma.Infrastructure;
+using Serilog;
 
-var builder = WebApplication.CreateBuilder(args);
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
-// Add services to the container.
-
-builder.Services.AddControllers()
-    .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
-builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration);
-builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
-builder.Services.AddCors(options =>
+try
 {
-    options.AddPolicy("Client", policy =>
-    {
-        policy
-            .WithOrigins("http://localhost:5173", "http://127.0.0.1:5173")
-            .AllowAnyHeader()
-            .AllowAnyMethod();
-    });
-});
+    Log.Information("Starting Nomisma API");
 
-var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
-    ?? throw new InvalidOperationException("JWT configuration is missing.");
+    var builder = WebApplication.CreateBuilder(args);
 
-builder.Services
-    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+    builder.Host.UseSerilog((context, services, configuration) => configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext());
+
+    // Add services to the container.
+
+    builder.Services.AddControllers()
+        .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+    builder.Services.AddApplication();
+    builder.Services.AddInfrastructure(builder.Configuration);
+    builder.Services.AddHttpContextAccessor();
+    builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+    builder.Services.AddCors(options =>
     {
-        options.TokenValidationParameters = new TokenValidationParameters
+        options.AddPolicy("Client", policy =>
         {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateIssuerSigningKey = true,
-            ValidateLifetime = true,
-            ValidIssuer = jwtOptions.Issuer,
-            ValidAudience = jwtOptions.Audience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Secret)),
-            ClockSkew = TimeSpan.FromMinutes(1)
-        };
+            policy
+                .WithOrigins("http://localhost:5173", "http://127.0.0.1:5173")
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+        });
     });
 
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy(UserRole.Admin.ToString(), policy => policy.RequireRole(UserRole.Admin.ToString()));
-    options.AddPolicy(UserRole.Customer.ToString(), policy => policy.RequireRole(UserRole.Customer.ToString()));
-});
+    var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
+        ?? throw new InvalidOperationException("JWT configuration is missing.");
 
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+    builder.Services
+        .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddJwtBearer(options =>
+        {
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateIssuerSigningKey = true,
+                ValidateLifetime = true,
+                ValidIssuer = jwtOptions.Issuer,
+                ValidAudience = jwtOptions.Audience,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Secret)),
+                ClockSkew = TimeSpan.FromMinutes(1)
+            };
+        });
 
-var app = builder.Build();
+    builder.Services.AddAuthorization(options =>
+    {
+        options.AddPolicy(UserRole.Admin.ToString(), policy => policy.RequireRole(UserRole.Admin.ToString()));
+        options.AddPolicy(UserRole.Customer.ToString(), policy => policy.RequireRole(UserRole.Customer.ToString()));
+    });
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen();
+
+    var app = builder.Build();
+
+    // Configure the HTTP request pipeline.
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseSwagger();
+        app.UseSwaggerUI();
+    }
+
+    app.UseSerilogRequestLogging();
+    app.UseMiddleware<ExceptionHandlingMiddleware>();
+    app.UseHttpsRedirection();
+    app.UseCors("Client");
+
+    app.UseAuthentication();
+    app.UseAuthorization();
+
+    app.MapControllers();
+
+    if (app.Environment.IsDevelopment())
+    {
+        await app.Services.MigrateAndSeedNomismaAsync();
+    }
+
+    app.Run();
 }
-
-app.UseMiddleware<ExceptionHandlingMiddleware>();
-app.UseHttpsRedirection();
-app.UseCors("Client");
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.MapControllers();
-
-if (app.Environment.IsDevelopment())
+catch (Exception exception)
 {
-    await app.Services.MigrateAndSeedNomismaAsync();
+    Log.Fatal(exception, "Nomisma API terminated unexpectedly");
 }
-
-app.Run();
+finally
+{
+    await Log.CloseAndFlushAsync();
+}
