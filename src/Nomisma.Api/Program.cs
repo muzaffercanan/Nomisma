@@ -40,7 +40,18 @@ try
         options.AddPolicy("Client", policy =>
         {
             policy
-                .WithOrigins("http://localhost:5173", "http://127.0.0.1:5173")
+                .SetIsOriginAllowed(origin =>
+                {
+                    if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+                    {
+                        return false;
+                    }
+
+                    var isLocalViteHost = uri.Scheme == Uri.UriSchemeHttp
+                        && (uri.Host == "localhost" || uri.Host == "127.0.0.1");
+
+                    return isLocalViteHost && uri.Port is >= 5173 and <= 5179;
+                })
                 .AllowAnyHeader()
                 .AllowAnyMethod();
         });
