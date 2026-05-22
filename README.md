@@ -206,3 +206,9 @@ Bu projede geliştirme sürecinde yapay zeka araçlarından (Claude) yararlanıl
 **Nasıl kullanıldı:**
 
 AI tarafından üretilen çıktılar doğrudan kopyalanmamıştır. Her çıktı gözden geçirilmiş, projenin gerçek domain mantığına göre düzenlenmiş ve manuel olarak test edilmiştir. Finansal hesaplama modeli (`LoanCalculator`), kredi skoru eşiği, ödeme gateway akışı ve iş kuralları tarafımdan tasarlanmıştır.
+
+<img width="2560" height="1232" alt="image" src="https://github.com/user-attachments/assets/db3b8bd0-9dae-4b90-a573-264415d768f7" />
+<img width="2482" height="1241" alt="image" src="https://github.com/user-attachments/assets/8cc0c4ef-e78b-469d-a3fd-45be1bc2c161" />
+<img width="2485" height="1241" alt="image" src="https://github.com/user-attachments/assets/f2b9aedc-46b9-4f6f-9459-5b99668ba18d" />
+
+
